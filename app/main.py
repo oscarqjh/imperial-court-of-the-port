@@ -3,6 +3,7 @@ from typing import Dict
 
 from .router_incidents import router as incidents_router
 from .router_rag import router as rag_router
+from .router_db import router as db_router
 
 app = FastAPI(title="Imperial Court of the Port", version="0.1.0")
 
@@ -14,3 +15,4 @@ async def health() -> Dict[str, str]:
 
 app.include_router(incidents_router)
 app.include_router(rag_router)
+app.include_router(db_router)

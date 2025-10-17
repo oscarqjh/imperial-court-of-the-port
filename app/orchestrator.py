@@ -10,6 +10,7 @@ except Exception:
 	external_available = False
 
 from .agents import AGENTS
+from .agents_db import list_recent_edi_messages
 
 
 class ImperialOrchestrator:
@@ -24,13 +25,18 @@ class ImperialOrchestrator:
 		return self._crewai_run(incident)
 
 	def _mock_run(self, incident: Dict[str, Any]) -> Dict[str, Any]:
-		# Extremely simple flow matching your imperial structure
 		strategy = f"Secretariat(智文) synthesizes inputs for {incident.get('incident_type')}"
 		review = "門下省(明鏡) validates policy and ethics"
 		decision = "太和智君 approves resource allocation and response"
+		try:
+			recent = list_recent_edi_messages(5)
+			recent_edi = [{"message_type": r.get("message_type"), "sent_at": r.get("sent_at")} for r in recent]
+		except Exception:
+			recent_edi = []
 		return {
 			"emperor": AGENTS["emperor"]["name"],
 			"steps": [strategy, review, decision],
+			"recent_edi": recent_edi,
 			"recommendations": [
 				"Deploy 安戍 to contain incident",
 				"工智 to apply fix and auto-heal",
@@ -39,7 +45,6 @@ class ImperialOrchestrator:
 		}
 
 	def _crewai_run(self, incident: Dict[str, Any]) -> Dict[str, Any]:
-		# Minimal CrewAI wiring: emperor + secretariat (strategy+review)
 		emperor = CrewAgent(
 			role="Emperor 太和智君",
 			goal="Make final decision for port incidents",

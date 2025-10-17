@@ -1,3 +1,24 @@
+Metadata-Version: 2.4
+Name: imperial-court-of-the-port
+Version: 0.1.0
+Summary: Agentic AI backend (FastAPI + RAG) for port incidents
+Author: NTU Code Sprint Team
+Project-URL: Homepage, https://example.com
+Keywords: fastapi,rag,agents,crewai,qdrant
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: fastapi==0.115.0
+Requires-Dist: uvicorn[standard]==0.30.6
+Requires-Dist: pydantic==2.9.2
+Requires-Dist: pydantic-settings==2.5.2
+Requires-Dist: httpx==0.27.2
+Requires-Dist: python-dotenv==1.0.1
+Requires-Dist: loguru==0.7.2
+Requires-Dist: crewai==0.51.0
+Requires-Dist: openai==1.52.2
+Requires-Dist: pandas==2.2.3
+Requires-Dist: qdrant-client==1.9.0
+
 # imperial-court-of-the-port
 
 An agentic AI system to manage port incidents
@@ -15,15 +36,15 @@ pip install -r requirements.txt
 2. Environment variables (create `.env` or export):
 
 ```bash
-# Embeddings
+# Required for embeddings
 OPENAI_API_KEY=sk-...
-# Qdrant Cloud
+# Qdrant Cloud (free tier): create a serverless cluster
 QDRANT_URL=https://YOUR-CLUSTER-URL
-QDRANT_API_KEY=YOUR_QDRANT_API_KEY
+QDRANT_API_KEY=YOUR_QDRANT_API_KEY  # optional for public endpoints
 QDRANT_COLLECTION=imperial_court_kb
-# Supabase Postgres (Connection string)
-# Format: postgresql+asyncpg://USER:PASSWORD@HOST:PORT/DB
-SUPABASE_DB_URL=postgresql+asyncpg://postgres.YOURID:YOURPASS@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres
+# Optional
+EMBED_MODEL=text-embedding-3-small
+MOCK_MODE=true
 ```
 
 3. Run the server:
@@ -41,10 +62,8 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 { "incident_type": "network_outage", "severity": "high", "payload": {} }
 ```
 
-- RAG:
-  - POST `/rag/ingest` (DOCX)
-  - POST `/rag/ingest_parsed` (TXT)
-  - POST `/rag/search` with body:
+- POST `/rag/ingest` → reads `data/Knowledge Base.docx`, chunks and pushes into Qdrant
+- POST `/rag/search` with body:
 
 ```json
 { "query": "What is the response to a crane failure?", "top_k": 5 }
@@ -62,8 +81,3 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
   - `app/router_rag.py` – endpoints
 
 Follow `message (1).txt` for imperial naming; RAG serves ministries for contextual grounding.
-
-## Notes
-
-- Ensure your Supabase project allows network access from your environment and the connection string uses the pooled port (e.g., 6543) for asyncpg.
-- Agents can call the DB helper via `app/db.py` functions to read operational data.

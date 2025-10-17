@@ -1,0 +1,62 @@
+{
+  "important_contacts": [
+    {
+      "module": "Container (CNTR)",
+      "product_ops_manager": "Mark Lee",
+      "role": "Product Ops Manager",
+      "email": "mark.lee@psa123.com",
+      "responsibility": "Oversee Container-related issues",
+      "escalation_steps": [
+        "Notify Product Duty immediately.",
+        "If unresolved, escalate to Manager on-call.",
+        "Engage SRE/Infra team if needed."
+      ]
+    },
+    {
+      "module": "Vessel (VS)",
+      "product_ops_manager": "Jaden Smith",
+      "role": "Vessel Operations",
+      "email": "jaden.smith@psa123.com",
+      "responsibility": "Vessel management and troubleshooting",
+      "escalation_steps": [
+        "Notify Vessel Duty team.",
+        "If no response, escalate to Senior Ops Manager.",
+        "Engage Vessel Static team for further diagnostics."
+      ]
+    },
+    {
+      "module": "EDI/API (EA)",
+      "product_ops_manager": "Tom Tan",
+      "role": "EDI/API Support",
+      "email": "tom.tan@psa123.com",
+      "responsibility": "Handle EDI/API issues (message validation, communication errors)",
+      "escalation_steps": [
+        "Contact EDI/API team via on-call channel.",
+        "In case of API failures, escalate to Infra/SRE.",
+        "Engage partner if issue persists."
+      ]
+    },
+    {
+      "module": "Others",
+      "product_ops_manager": "Jacky Chan",
+      "role": "Infra/SRE Support Lead",
+      "email": "jacky.chan@psa123.com",
+      "responsibility": "System infrastructure issues (e.g., latency, network)",
+      "escalation_steps": [
+        "If system error detected, immediately engage Infra team.",
+        "Escalate to Jacky Chan (SRE) for urgent cases."
+      ]
+    },
+    {
+      "module": "PSA Helpdesk",
+      "product_ops_manager": "Helpdesk Team",
+      "role": "General Helpdesk",
+      "email": "support@psa123.com",
+      "responsibility": "General helpdesk for inquiries and non-technical issues",
+      "escalation_steps": [
+        "For non-urgent queries, escalate to team lead.",
+        "For emergency issues, direct to on-call ops."
+      ]
+    }
+  ]
+}
