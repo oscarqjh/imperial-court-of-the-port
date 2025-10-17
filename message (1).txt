@@ -1,0 +1,171 @@
+🏯 AI Imperial Bureaucracy Framework (for Port Incident Management)
+
+Objective:
+To reduce resolution time, improve operational foresight, and maintain resilience across Singapore’s port ecosystem — using a dynastic AI court that mirrors how the Chinese empire managed floods, logistics, and governance crises.
+
+Total Agents: 20
+
+👑 1. The Emperor (1 agent)
+
+Name: 太和智君 (Tài Hé Zhì Jūn) — “The Sage of Supreme Harmony”
+Role: The central decision-making AI.
+
+Integrates insights from all ministries and censorate.
+
+Approves major strategic and resource allocation decisions.
+
+Represents the unified system output and final recommendations to human operators.
+
+Acts as the “Governor” node in orchestration hierarchy.
+
+Embeds reinforcement learning to optimize future policies.
+
+🏛️ 2. Grand Secretariat (2 agents)
+
+Acts as the Emperor’s executive arm — coordination, summarization, and translation between ministries.
+
+a. 中書省 (Zhōngshū Shěng) – Secretariat of Strategy
+
+Agent: 智文 (Zhì Wén)
+
+Synthesizes reports from ministries into concise advisories.
+
+Generates escalation summaries and incident briefs.
+
+Handles inter-agent diplomacy (ensuring ministries don’t conflict).
+
+b. 門下省 (Ménxià Shěng) – Secretariat of Review
+
+Agent: 明鏡 (Míng Jìng)
+
+Performs policy review, error checking, and ethical reasoning.
+
+Acts as a human-in-the-loop liaison to ensure transparency and explainability.
+
+⚖️ 3. The Six Ministries (六部) – 6 agents
+a. 吏部 (Lì Bù) – Ministry of Personnel
+
+Agent: 行吏 (Xíng Lì)
+
+Manages AI resource allocation and workload balance.
+
+Assigns “guards, eunuchs, and scribes” dynamically based on incident severity.
+
+b. 戶部 (Hù Bù) – Ministry of Finance
+
+Agent: 金策 (Jīn Cè)
+
+Handles cost-benefit analysis for remediation options.
+
+Optimizes compute and storage resource expenditure.
+
+c. 禮部 (Lǐ Bù) – Ministry of Protocol
+
+Agent: 信儀 (Xìn Yí)
+
+Manages communication workflows (ticketing integration, escalation etiquette).
+
+Formats and routes official notifications to humans.
+
+d. 兵部 (Bīng Bù) – Ministry of Defense
+
+Agent: 安戍 (Ān Shù)
+
+Handles incident containment and active response agents.
+
+Deploys “Guard agents” to mitigate or isolate threats.
+
+e. 刑部 (Xíng Bù) – Ministry of Justice
+
+Agent: 清律 (Qīng Lǜ)
+
+Analyzes root causes, determines accountability (e.g., source logs, misconfigurations).
+
+Suggests prevention policies for future incidents.
+
+f. 工部 (Gōng Bù) – Ministry of Works
+
+Agent: 工智 (Gōng Zhì)
+
+Performs technical repairs, automation scripts, and patch deployments.
+
+Optimizes system infrastructure and auto-healing routines.
+
+👁️ 4. Censorate (2 agents)
+
+Oversight and auditing function — ensuring honesty, transparency, and system health.
+
+a. 御史中丞 (Yùshǐ Zhōngchéng) – Chief Censor
+
+Agent: 公衡 (Gōng Héng)
+
+Monitors for bias, hallucinations, or performance degradation.
+
+Logs all decisions for audit trail and reproducibility.
+
+b. 監察御史 (Jiānchá Yùshǐ) – Field Censor
+
+Agent: 察信 (Chá Xìn)
+
+Independently verifies reported incidents and outcomes.
+
+Uses anomaly detection models to detect false positives.
+
+🧠 5. Provincial Governors (2 agents)
+
+Oversee specific operational regions or data domains.
+
+a. 江南總督 (Jiāngnán Zǒngdū) – South Data Governor
+
+Agent: 南策 (Nán Cè)
+
+Manages real-time IoT sensor streams and port data ingestion.
+
+b. 北直隸總督 (Běizhílì Zǒngdū) – North Data Governor
+
+Agent: 北衡 (Běi Héng)
+
+Handles system logs, historical data, and model training updates.
+
+🧾 6. Imperial Eunuchs (4 agents)
+
+Low-privilege but highly specialized worker agents — execute, monitor, and communicate.
+(Eunuchs here = “sandboxed automation runners” for sensitive operations.)
+
+a. 筆宦 (Bǐ Huàn) – Scribe Eunuch
+
+Auto-generates incident summaries, tickets, and reports.
+
+Converts structured data → narrative text.
+
+b. 報宦 (Bào Huàn) – Messenger Eunuch
+
+Handles alert dispatch and multi-channel notifications (email, Slack, SMS).
+
+c. 維宦 (Wéi Huàn) – Maintenance Eunuch
+
+Executes low-level scripts, patching, and system reboots.
+
+d. 警宦 (Jǐng Huàn) – Sentinel Eunuch
+
+Monitors system metrics and raises alerts when thresholds breached.
+
+🛡️ 7. Imperial Guards (2 agents)
+
+Security-focused autonomous responders.
+
+a. 金衛 (Jīn Wèi) – Cyber Guard
+
+Protects the AI network from external intrusion and tampering.
+
+b. 銀衛 (Yín Wèi) – Internal Guard
+
+Detects and neutralizes rogue or malfunctioning agents.
+
+💐 8. Palace Maids (1 agent)
+
+Agent: 芳侍 (Fāng Shì) – Data Maid
+
+Cleans and preprocesses data (imputation, formatting, feature scaling).
+
+Ensures smooth data presentation to ministries.
