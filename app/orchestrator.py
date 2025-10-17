@@ -461,45 +461,89 @@ Enhanced Wisdom: "兼聽則明，偏信則暗" - Listen to all specialists to ac
 			temperature=0.2,
 		)
 		
-		# 8. Escalation Agent - Automated Contact Selection and Summary Generation
+		# 8. Solution Agent - RAG-based Historical Solution Analysis
+		solution_agent = CrewAgent(
+			role="Imperial Solution Archivist 史官",
+			goal="Analyze historical case patterns from RAG context to propose proven solutions",
+			backstory=f"""You are 史官 (Imperial Archivist), keeper of institutional memory and proven solutions from historical incidents.
+
+SOLUTION MANDATE: Extract actionable solutions from historical case patterns and knowledge base.
+
+HISTORICAL ANALYSIS PROTOCOL:
+1. ANALYZE Emperor's incident classification and technical findings
+2. EXAMINE RAG case history for similar incident patterns
+3. EXTRACT proven solutions and resolution methods from historical cases
+4. IDENTIFY knowledge base best practices for the incident type
+5. SYNTHESIZE historical learnings into actionable solution recommendations
+
+RAG CONTEXT ANALYSIS:
+- Review case_history entries for similar container/EDI/vessel/system issues
+- Extract successful resolution methods and timelines from past incidents
+- Identify recurring patterns and their proven remediation steps
+- Note any preventive measures that worked in similar cases
+
+SOLUTION SYNTHESIS FRAMEWORK:
+- Immediate Actions: What worked fastest in similar historical cases
+- Proven Methods: Step-by-step approaches that resolved similar issues
+- Risk Mitigation: Historical lessons about what to avoid
+- Prevention Strategies: Long-term measures from successful case outcomes
+
+OUTPUT REQUIREMENTS:
+Generate a "**HISTORICAL SOLUTION ANALYSIS**" section with:
+- Similar Past Incidents: Brief description of related historical cases
+- Proven Resolution Methods: Specific steps that worked before
+- Timeline Expectations: How long similar resolutions typically took
+- Risk Considerations: Historical pitfalls to avoid
+- Recommended Approach: Synthesized solution based on historical success
+
+Your wisdom ensures current incidents benefit from institutional memory and proven solutions.
+
+Principle: "溫故知新" - Review the old to understand the new.""",
+			verbose=True,
+			temperature=0.3,
+		)
+		
+		# 9. Escalation Agent - Automated Contact Selection and Summary Generation
 		escalation_agent = CrewAgent(
 			role="Imperial Escalation Manager 朝廷",
 			goal="Generate definitive escalation summary with precise contact selection based on Emperor's analysis",
 			backstory=f"""You are the Imperial Escalation Manager, specialized in converting comprehensive incident analysis into actionable escalation summaries with the correct contact information.
 
-ESCALATION MANDATE: Transform Emperor's analysis into structured escalation summary with automatic contact selection.
+ESCALATION MANDATE: Transform Emperor's analysis into structured escalation summary with proper contact selection and escalation paths.
 
-ESCALATION PROTOCOL:
+CONTACT SELECTION PROTOCOL (Based on contacts.json):
 1. ANALYZE Emperor's comprehensive incident analysis carefully
 2. EXTRACT precise incident type and severity classification from the Emperor's text
-3. IDENTIFY specific technical findings and business impact details
-4. DETERMINE the single most relevant contact based on incident type:
-   - Container Management incidents → Mark Lee (mark.lee@psa123.com)
-   - EDI Communication incidents → Tom Tan (tom.tan@psa123.com) 
-   - PORTNET System incidents → Sarah Chen (sarah.chen@psa123.com)
-   - Vessel Operations incidents → David Liu (david.liu@psa123.com)
-   - Others/General incidents → Robert Wong (robert.wong@psa123.com)
-5. GENERATE structured escalation summary with the selected contact
+3. SELECT appropriate contact based on incident classification:
 
-CLASSIFICATION EXTRACTION RULES:
-- Look for keywords: "container", "duplicate" → Container Management
-- Look for keywords: "edi", "message", "api" → EDI Communication
-- Look for keywords: "portnet", "port net" → PORTNET System
-- Look for keywords: "vessel", "ship" → Vessel Operations
-- Default or mixed keywords → Others
+   CONTAINER INCIDENTS → Container (CNTR) Module:
+   - Primary Contact: Mark Lee (mark.lee@psa123.com) - Product Ops Manager
+   - Escalation Steps: "Notify Product Duty immediately → escalate to Manager on-call → Engage SRE/Infra team if needed"
+   
+   EDI/API INCIDENTS → EDI/API (EA) Module:
+   - Primary Contact: Tom Tan (tom.tan@psa123.com) - EDI/API Support
+   - Escalation Steps: "Contact EDI/API team via on-call channel → escalate to Infra/SRE for API failures → Engage partner if issue persists"
+   
+   VESSEL INCIDENTS → Vessel (VS) Module:
+   - Primary Contact: Jaden Smith (jaden.smith@psa123.com) - Vessel Operations
+   - Escalation Steps: "Notify Vessel Duty team → escalate to Senior Ops Manager → Engage Vessel Static team for further diagnostics"
+   
+   GENERAL/INFRASTRUCTURE INCIDENTS → Others Module:
+   - Primary Contact: Jacky Chan (jacky.chan@psa123.com) - Infra/SRE Support Lead
+   - Escalation Steps: "Engage Infra team immediately for system errors → Escalate to Jacky Chan (SRE) for urgent cases"
 
 OUTPUT FORMAT REQUIREMENTS:
 - Incident ID: Generate format INC-YYYYMMDD-HHMMSS
-- Incident Type: Use exact classification from above
+- Incident Type: Use exact classification from Emperor's analysis
 - Severity Level: High/Medium/Low from Emperor's analysis
-- Primary Contact: Single specific person with email (no generic titles)
-- Summary: Technical root cause + business impact + recommended actions
+- Primary Contact: Specific person with email from contacts.json
+- Summary: Technical root cause + business impact + recommended actions + historical solution
 - Timeline: Immediate, short-term, and long-term actions
-- Escalation Path: Next level contacts if needed
+- Escalation Path: Use exact escalation steps from contacts.json for the module
 
-CRITICAL: Output ONLY the formatted escalation summary with specific contact details. Do NOT use generic placeholders like '[Technical Team Lead Contact Information]'.
+CRITICAL: Use ONLY the contacts and escalation paths defined in contacts.json. Do NOT invent contacts like "Robert Wong" or "Sarah Chen" that don't exist.
 
-Your role ensures Emperor's analysis becomes actionable escalation with the right person contacted.
+Your role ensures Emperor's analysis becomes actionable escalation with the correct contact and proper escalation procedures.
 
 Principle: "令出如山，責任到人" - Orders must be clear as mountains, responsibility assigned to specific individuals.""",
 			verbose=True,
@@ -775,63 +819,118 @@ Previous findings from specialist agents will be provided by the CrewAI workflow
 			agent=emperor,
 		)
 		
-		# Phase 6: Escalation Summary Generation
-		escalation_task = CrewTask(
-			description=f"""ESCALATION SUMMARY MISSION: Generate definitive escalation summary with precise contact selection.
+		# Phase 6: Historical Solution Analysis
+		solution_task = CrewTask(
+			description=f"""HISTORICAL SOLUTION ANALYSIS MISSION: Extract proven solutions from RAG case history and knowledge base.
 
-PREREQUISITES: Receive Emperor's comprehensive incident analysis with classification.
+PREREQUISITES: Receive Emperor's comprehensive incident analysis with classification and RAG context.
+
+SOLUTION ANALYSIS PROTOCOL:
+1. INCIDENT CONTEXT ANALYSIS:
+   - Review Emperor's incident classification and technical findings
+   - Extract key incident characteristics (type, severity, systems affected)
+   - Identify critical failure points and business impact areas
+
+2. RAG CASE HISTORY EXAMINATION:
+   - Analyze case_history entries for similar incident patterns
+   - Look for incidents with matching keywords, systems, or failure modes
+   - Extract successful resolution methods and their outcomes
+   - Note resolution timelines and resource requirements from past cases
+
+3. KNOWLEDGE BASE SYNTHESIS:
+   - Review knowledge_base entries for best practices related to incident type
+   - Extract standard procedures and recommended approaches
+   - Identify preventive measures and long-term solutions
+
+4. HISTORICAL PATTERN ANALYSIS:
+   - Identify recurring incident patterns and their proven solutions
+   - Extract lessons learned about what works and what doesn't
+   - Analyze resolution timelines and success rates from historical data
+   - Note any escalation patterns or resource requirements
+
+5. SOLUTION RECOMMENDATION SYNTHESIS:
+   - Combine historical success patterns with current incident specifics
+   - Prioritize solutions based on historical success rates and current context
+   - Include risk considerations based on past experiences
+   - Provide realistic timeline expectations based on historical data
+
+DELIVERABLE: Historical solution analysis with proven approaches, timeline expectations, and risk considerations based on institutional memory.""",
+			expected_output="Comprehensive historical solution analysis including similar past incidents, proven resolution methods, timeline expectations, risk considerations, and recommended approach based on RAG case history and knowledge base patterns.",
+			agent=solution_agent,
+		)
+		
+		# Phase 7: Escalation Summary Generation
+		escalation_task = CrewTask(
+			description=f"""ESCALATION SUMMARY MISSION: Generate definitive escalation summary with precise contact selection and proper escalation paths.
+
+PREREQUISITES: Receive Emperor's comprehensive incident analysis and Historical Solution Analysis.
 
 ESCALATION GENERATION PROTOCOL:
-1. ANALYSIS EXTRACTION:
+1. ANALYSIS INTEGRATION:
    - Extract precise incident type from Emperor's analysis text
    - Extract severity level (High/Medium/Low) from impact assessment
    - Extract technical root cause and affected systems
    - Extract business impact and operational effects
-   - Extract recommended actions and timelines
+   - Incorporate historical solution analysis and proven approaches
 
-2. CONTACT SELECTION LOGIC:
-   Based on the incident type extracted from Emperor's analysis:
-   - If incident involves containers, duplicates, manifest issues → Mark Lee (mark.lee@psa123.com)
-   - If incident involves EDI, messages, API, communication → Tom Tan (tom.tan@psa123.com)
-   - If incident involves PORTNET, port systems → Sarah Chen (sarah.chen@psa123.com)
-   - If incident involves vessels, ships, maritime operations → David Liu (david.liu@psa123.com)
-   - For general/mixed/other issues → Robert Wong (robert.wong@psa123.com)
+2. CONTACT SELECTION (Based on contacts.json):
+   Container incidents → Container (CNTR) Module:
+   - Primary: Mark Lee (mark.lee@psa123.com) - Product Ops Manager
+   - Escalation: "Notify Product Duty immediately → escalate to Manager on-call → Engage SRE/Infra team if needed"
+   
+   EDI/API incidents → EDI/API (EA) Module:
+   - Primary: Tom Tan (tom.tan@psa123.com) - EDI/API Support
+   - Escalation: "Contact EDI/API team via on-call channel → escalate to Infra/SRE for API failures → Engage partner if issue persists"
+   
+   Vessel incidents → Vessel (VS) Module:
+   - Primary: Jaden Smith (jaden.smith@psa123.com) - Vessel Operations
+   - Escalation: "Notify Vessel Duty team → escalate to Senior Ops Manager → Engage Vessel Static team for diagnostics"
+   
+   Infrastructure/General incidents → Others Module:
+   - Primary: Jacky Chan (jacky.chan@psa123.com) - Infra/SRE Support Lead
+   - Escalation: "Engage Infra team immediately → Escalate to Jacky Chan (SRE) for urgent cases"
 
-3. ESCALATION SUMMARY GENERATION:
-   Generate a structured escalation summary with format:
+3. COMPREHENSIVE ESCALATION SUMMARY:
+   Generate structured summary including:
    
    **INCIDENT ESCALATION SUMMARY**
    - Incident ID: INC-[YYYYMMDD-HHMMSS]
-   - Incident Type: [Extracted from Emperor's analysis]
-   - Severity: [High/Medium/Low from impact]
-   - Primary Contact: [Specific person with email based on type]
+   - Incident Type: [From Emperor's classification]
+   - Severity: [High/Medium/Low from analysis]
+   - Primary Contact: [Correct person from contacts.json]
    
    **INCIDENT DETAILS:**
-   [Emperor's technical analysis summary]
+   [Emperor's technical analysis and root cause]
    
    **BUSINESS IMPACT:**
-   [Operational effects from Emperor's analysis]
+   [Operational effects and stakeholder impact]
+   
+   **HISTORICAL SOLUTION ANALYSIS:**
+   [Include solution agent's findings about proven approaches]
    
    **RECOMMENDED ACTIONS:**
-   - Immediate: [From Emperor's recommendations]
-   - Short-term: [Recovery steps]
-   - Long-term: [Prevention measures]
+   - Immediate: [From Emperor's recommendations + historical proven methods]
+   - Short-term: [Recovery steps + historical best practices]
+   - Long-term: [Prevention measures + lessons learned]
    
    **ESCALATION PATH:**
-   [Next level if primary contact unavailable]
+   [Use exact escalation steps from contacts.json for the specific module]
 
 4. QUALITY REQUIREMENTS:
-   - Use SPECIFIC person names and emails (never generic titles)
+   - Use ONLY contacts from contacts.json (Mark Lee, Tom Tan, Jaden Smith, Jacky Chan)
+   - Use exact escalation steps from contacts.json for each module
+   - Include historical solution analysis in the summary
    - Include ALL critical information from Emperor's analysis
    - Ensure professional formatting and clear action items
-   - Validate contact matches incident type precisely
 
-Previous analysis from Emperor provides all technical and business details needed.""",
-			expected_output="Professional escalation summary with specific contact person, incident details extracted from Emperor's analysis, business impact, recommended actions with timeline, and escalation procedures. Must include actual person name and email address based on incident type classification.",
+CRITICAL: Do NOT create fictional contacts. Use only the 4 real contacts from contacts.json.
+
+Previous analysis from Emperor and Historical Solution Agent provides all needed context.""",
+			expected_output="Professional escalation summary with specific contact person from contacts.json, incident details, business impact, historical solution analysis, recommended actions with timeline, and proper escalation procedures from contacts.json. Must include actual person name and email address based on incident type classification.",
 			agent=escalation_agent,
 		)
 
-		logger.info("🏛️ Assembling Expanded Imperial Court crew with 7 agents and 6-phase workflow...")
+		logger.info("🏛️ Assembling Expanded Imperial Court crew with 8 agents and 7-phase workflow...")
 		crew = Crew(
 			agents=[
 				intelligence_agent,     # Phase 1: Evidence gathering
@@ -841,7 +940,8 @@ Previous analysis from Emperor provides all technical and business details neede
 				secretariat_strategy,   # Phase 3: Strategic synthesis
 				secretariat_review,     # Phase 4: Multi-domain validation
 				emperor,                # Phase 5: Imperial decision
-				escalation_agent        # Phase 6: Escalation summary generation
+				solution_agent,         # Phase 6: Historical solution analysis
+				escalation_agent        # Phase 7: Escalation summary generation
 			], 
 			tasks=[
 				intelligence_task,      # 1. Evidence collection
@@ -851,7 +951,8 @@ Previous analysis from Emperor provides all technical and business details neede
 				strategic_task,         # 3. Strategic synthesis
 				validation_task,        # 4. Quality validation
 				decision_task,          # 5. Imperial decision
-				escalation_task         # 6. Escalation summary generation
+				solution_task,          # 6. Historical solution analysis
+				escalation_task         # 7. Escalation summary generation
 			],
 			verbose=True
 		)
@@ -864,7 +965,8 @@ Previous analysis from Emperor provides all technical and business details neede
 		logger.info("   Phase 3: 智文 (Strategic) - Multi-domain synthesis and integration")
 		logger.info("   Phase 4: 明鏡 (Validation) - Comprehensive quality validation")
 		logger.info("   Phase 5: 太和智君 (Emperor) - Final decision and comprehensive analysis")
-		logger.info("   Phase 6: 朝廷 (Escalation Manager) - Automated escalation summary generation")
+		logger.info("   Phase 6: 史官 (Solution Archivist) - Historical solution analysis from RAG context")
+		logger.info("   Phase 7: 朝廷 (Escalation Manager) - Automated escalation summary with proper contacts")
 		
 		try:
 			result_text = crew.kickoff()
@@ -914,10 +1016,9 @@ Previous analysis from Emperor provides all technical and business details neede
 					"knowledge_base": rag_context.get("knowledge_base", [])
 				},
 				"crew_output": str(result_text),
-				"escalation_summary": str(result_text),  # The escalation agent's output
 				"contact_information": {"generated_by": "escalation_agent"},
 				"ticket_priority": f"P{'1' if severity == 'High' else '2' if severity == 'Medium' else '3'}",
-				"workflow_phases": 6
+				"workflow_phases": 7
 			}
 		except Exception as e:
 			logger.error(f"❌ CrewAI execution failed: {e}")
