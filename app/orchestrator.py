@@ -22,6 +22,7 @@ class ImperialOrchestrator:
 	def _search_collection(self, query_text: str, collection: str, top_k: int = 3) -> List[Dict[str, Any]]:
 		"""Search specific Qdrant collection for RAG context."""
 		try:
+			logger.debug(f"🔍 Searching {collection} collection for: '{query_text[:50]}{'...' if len(query_text) > 50 else ''}'")
 			from .rag_embeddings import embed_texts
 			from .rag_qdrant import QdrantStore
 			
@@ -29,6 +30,7 @@ class ImperialOrchestrator:
 			store = QdrantStore(collection=collection)
 			
 			hits = store.search(vector=vec, top_k=top_k)
+			logger.debug(f"   📊 Found {len(hits)} results in {collection}")
 			return hits
 		except Exception as e:
 			logger.warning(f"RAG search failed for collection {collection}: {e}")
@@ -50,9 +52,14 @@ class ImperialOrchestrator:
 		incident_text = incident.get("incident_text", "")
 		if not incident_text:
 			return {"error": "No incident text provided"}
-			
+		
+		logger.info("🏛️ IMPERIAL COURT INCIDENT PROCESSING INITIATED")
+		logger.info(f"📋 Incident Text: {incident_text[:100]}{'...' if len(incident_text) > 100 else ''}")
+		
 		# Gather RAG context first
+		logger.info("🔍 Gathering RAG context from historical cases and knowledge base...")
 		rag_context = self._gather_rag_context(incident_text)
+		logger.info(f"📚 RAG Context Retrieved - Cases: {len(rag_context.get('case_history', []))}, KB: {len(rag_context.get('knowledge_base', []))}")
 		
 		# Add RAG context to incident data for agents
 		enhanced_incident = {
@@ -61,48 +68,68 @@ class ImperialOrchestrator:
 		}
 		
 		if not self.crewai_available:
-			logger.info("Running in MOCK_MODE; returning synthesized results")
+			logger.info("🎭 Running in MOCK_MODE; returning synthesized results")
 			return self._mock_run(enhanced_incident)
+		
+		logger.info("🤖 Initiating CrewAI Agent Workflow...")
 		return self._crewai_run(enhanced_incident)
 
 	def _mock_run(self, incident: Dict[str, Any]) -> Dict[str, Any]:
 		incident_text = incident.get("incident_text", "")
 		rag_context = incident.get("rag_context", {})
 		
+		logger.info("🎭 MOCK MODE AGENT SIMULATION INITIATED")
+		
 		# Enhanced mock mode with database tool simulation
 		tools = AgentDatabaseTools()
 		
 		# Simulate agent using database tools for analysis
+		logger.info("📊 Simulating agent database tool usage...")
 		db_analysis = {}
 		try:
 			# Simulate operational overview check
+			logger.info("   🔍 Agent retrieving operational overview...")
 			operational_data = tools.get_operational_overview()
 			db_analysis["operational_overview"] = operational_data
+			logger.info(f"   ✅ Operational data retrieved: {operational_data.get('total_vessels', 'N/A')} vessels")
 			
 			# Simulate system health check
+			logger.info("   🏥 Agent checking system health...")
 			health_data = tools.check_system_health()
 			db_analysis["system_health"] = health_data
+			if "edi_health" in health_data:
+				edi_rate = health_data["edi_health"].get("error_rate_percent", 0)
+				logger.info(f"   ✅ System health retrieved: {edi_rate}% EDI error rate")
+			else:
+				logger.info("   ⚠️ System health data not available")
 			
 			# Look for keywords in incident for targeted searches
 			text_lower = incident_text.lower()
 			if any(word in text_lower for word in ["container", "cntr", "msku", "oolu", "temu", "cmau"]):
+				logger.info("   📦 Agent detected container-related incident, searching containers...")
 				# Extract potential container number
 				words = incident_text.split()
 				for word in words:
 					if len(word) >= 10 and any(prefix in word.upper() for prefix in ["MSKU", "OOLU", "TEMU", "CMAU"]):
+						logger.info(f"   🔍 Agent searching for container: {word.upper()}")
 						container_data = tools.get_container_details(word.upper())
 						if container_data:
 							db_analysis["container_details"] = container_data
+							logger.info(f"   ✅ Container details retrieved for {word.upper()}")
 						break
 			
 			if any(word in text_lower for word in ["edi", "message", "coparn", "coarri", "codeco"]):
+				logger.info("   📡 Agent detected EDI-related incident, analyzing messages...")
 				edi_data = tools.analyze_edi_messages(hours_back=12, limit=10)
 				db_analysis["edi_analysis"] = edi_data
+				if "total_messages" in edi_data:
+					logger.info(f"   ✅ EDI analysis completed: {edi_data['total_messages']} messages analyzed")
 				
 		except Exception as e:
 			logger.warning(f"Mock database analysis failed: {e}")
 		
 		# Enhanced incident classification based on database insights
+		logger.info("🧠 Agent analyzing incident type and severity...")
 		incident_type = "General"
 		severity = "Medium"
 		
@@ -115,6 +142,8 @@ class ImperialOrchestrator:
 			incident_type = "PORTNET System"
 		elif "edi" in text_lower:
 			incident_type = "EDI Communication"
+		
+		logger.info(f"   📋 Incident classified as: {incident_type}")
 		
 		# Severity assessment considering system health
 		if "urgent" in text_lower or "critical" in text_lower:
@@ -130,16 +159,27 @@ class ImperialOrchestrator:
 			if (edi_health.get("error_rate_percent", 0) > 10 or 
 				api_health.get("error_rate_percent", 0) > 10):
 				severity = "High"  # System already stressed
+				logger.info("   ⚠️ Severity elevated to HIGH due to system stress")
 		
+		logger.info(f"   ⚖️ Severity assessed as: {severity}")
+		
+		# Agent decision simulation
+		logger.info("🎯 Agents formulating strategic response...")
 		strategy = f"智文 analyzes {incident_type} incident with severity {severity} using database insights"
 		review = f"明鏡 reviews policy for {incident_type} incidents using knowledge base and operational data"
 		decision = f"太和智君 decides on resource allocation for {severity} priority incident based on system health"
+		
+		logger.info(f"   📝 Strategic Analysis (智文): {strategy}")
+		logger.info(f"   🔍 Policy Review (明鏡): {review}")
+		logger.info(f"   👑 Imperial Decision (太和智君): {decision}")
 		
 		try:
 			recent = list_recent_edi_messages(5)
 			recent_edi = [{"message_type": r.get("message_type"), "sent_at": r.get("sent_at")} for r in recent]
 		except Exception:
 			recent_edi = []
+		
+		logger.info("✅ MOCK MODE AGENT PROCESSING COMPLETED")
 		
 		return {
 			"emperor": AGENTS["emperor"]["name"],
@@ -170,8 +210,13 @@ class ImperialOrchestrator:
 		incident_text = incident.get("incident_text", "")
 		rag_context = incident.get("rag_context", {})
 		
+		logger.info("🤖 CREWAI AGENT WORKFLOW INITIATED")
+		logger.info(f"👥 Assembling Imperial Court: 太和智君 (Emperor), 智文 (Strategy), 明鏡 (Review)")
+		
 		# Get database tool guidance for agents
 		tool_guidance = get_tool_guidance_text()
+		
+		logger.info("🏗️ Creating specialized agents with database tool access...")
 		
 		# Create agents with enhanced context and comprehensive database tool access
 		emperor = CrewAgent(
@@ -284,6 +329,8 @@ AUTHORITY: Reject any analysis lacking specific database evidence citations.""",
 			temperature=0.3,
 		)
 
+		logger.info("📋 Creating specialized tasks with database investigation requirements...")
+
 		# Create tasks with RAG context and database tool requirements
 		analysis_task = CrewTask(
 			description=f"""CRITICAL: You MUST use database tools to gather operational context before analysis.
@@ -361,14 +408,23 @@ REQUIRED OUTPUT: Comprehensive response plan grounded in factual operational dat
 			agent=emperor,
 		)
 
+		logger.info("🏛️ Assembling Imperial Court crew with agents and tasks...")
 		crew = Crew(
 			agents=[secretariat_strategy, secretariat_review, emperor], 
 			tasks=[analysis_task, review_task, decision_task],
 			verbose=True
 		)
 		
+		logger.info("🚀 INITIATING CREWAI WORKFLOW EXECUTION...")
+		logger.info("   📊 Strategic Analysis Agent (智文) will investigate incident using database tools")
+		logger.info("   🔍 Policy Review Agent (明鏡) will validate analysis with database evidence")
+		logger.info("   👑 Emperor (太和智君) will make final decision based on synthesized intelligence")
+		
 		try:
 			result_text = crew.kickoff()
+			logger.info("✅ CREWAI WORKFLOW COMPLETED SUCCESSFULLY")
+			logger.info(f"📜 Final Result Length: {len(str(result_text))} characters")
+			
 			return {
 				"emperor": AGENTS["emperor"]["name"],
 				"incident_analysis": {"original_text": incident_text},
@@ -381,6 +437,7 @@ REQUIRED OUTPUT: Comprehensive response plan grounded in factual operational dat
 				"crew_output": str(result_text)
 			}
 		except Exception as e:
-			logger.error(f"CrewAI execution failed: {e}")
+			logger.error(f"❌ CrewAI execution failed: {e}")
+			logger.warning("🔄 Falling back to mock mode...")
 			# Fallback to mock if CrewAI fails
 			return self._mock_run(incident)

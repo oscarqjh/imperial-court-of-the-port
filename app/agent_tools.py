@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 from typing import Dict, Any, List, Optional, Callable
 from functools import wraps
+from loguru import logger
 
 from .agents_db import (
     get_vessel_operations_summary,
@@ -25,15 +26,25 @@ def sync_wrapper(async_func: Callable) -> Callable:
     """Wrapper to make async functions callable from CrewAI agents."""
     @wraps(async_func)
     def wrapper(*args, **kwargs):
+        func_name = async_func.__name__
+        logger.info(f"🛠️ Agent tool invoked: {func_name}({', '.join(str(arg) for arg in args[:2])}{', ...' if len(args) > 2 else ''})")
         try:
             loop = asyncio.get_event_loop()
             if loop.is_running():
                 # If in async context, we need to use asyncio.create_task
                 # But CrewAI typically runs in sync context, so this should work
-                return loop.run_until_complete(async_func(*args, **kwargs))
+                result = loop.run_until_complete(async_func(*args, **kwargs))
             else:
-                return asyncio.run(async_func(*args, **kwargs))
+                result = asyncio.run(async_func(*args, **kwargs))
+            
+            if isinstance(result, dict) and "error" in result:
+                logger.warning(f"   ❌ Tool {func_name} returned error: {result['error']}")
+            else:
+                logger.info(f"   ✅ Tool {func_name} completed successfully")
+            
+            return result
         except Exception as e:
+            logger.error(f"   ❌ Tool {func_name} failed with exception: {str(e)}")
             return {"error": f"Database query failed: {str(e)}"}
     return wrapper
 
