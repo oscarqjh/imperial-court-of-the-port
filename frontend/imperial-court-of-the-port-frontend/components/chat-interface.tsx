@@ -6,22 +6,10 @@ import { ChatMessages } from "./chat-messages"
 import { ChatInput } from "./chat-input"
 import { FileUploadArea } from "./file-upload-area"
 import ResponsiveImage from "./responsive-image"
+import dbRAGService from "@/services/dbRAGService"
+import { Message, UploadedFile } from "@/types/chat-interface"
 
-export interface Message {
-  id: string
-  role: "user" | "assistant"
-  content: string
-  files?: UploadedFile[]
-  timestamp: Date
-}
 
-export interface UploadedFile {
-  id: string
-  name: string
-  size: number
-  type: string
-  url?: string
-}
 
 export function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([])
@@ -38,22 +26,11 @@ export function ChatInterface() {
       files: uploadedFiles.length > 0 ? [...uploadedFiles] : undefined,
       timestamp: new Date(),
     }
-
+    //pass data into service
+    dbRAGService(userMessage)
     setMessages((prev) => [...prev, userMessage])
     setUploadedFiles([])
     setIsLoading(true)
-
-    // Simulate AI response
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: `I've analyzed your ${uploadedFiles.length > 0 ? `${uploadedFiles.length} file(s) and your ` : ""}request. Here's my solution:\n\nBased on the information provided, I recommend the following approach:\n\n1. First, we should analyze the data structure\n2. Then, identify key patterns and insights\n3. Finally, develop a comprehensive solution strategy\n\nWould you like me to dive deeper into any specific aspect?`,
-        timestamp: new Date(),
-      }
-      setMessages((prev) => [...prev, assistantMessage])
-      setIsLoading(false)
-    }, 1500)
   }
 
   const handleFilesSelected = (files: UploadedFile[]) => {
