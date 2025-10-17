@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Form
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
 
@@ -8,9 +8,7 @@ router = APIRouter(prefix="/incident", tags=["incident"])
 
 
 class IncidentRequest(BaseModel):
-	incident_type: str
-	severity: Optional[str] = None
-	payload: Optional[Dict[str, Any]] = None
+	incident_text: str
 
 
 class RunResponse(BaseModel):
@@ -23,9 +21,9 @@ RUNS: Dict[str, Dict[str, Any]] = {}
 
 
 @router.post("/run", response_model=RunResponse)
-async def run_incident(req: IncidentRequest):
+async def run_incident(incident_text: str = Form(...)):
 	orchestrator = ImperialOrchestrator()
-	result = orchestrator.run(incident=req.model_dump())
+	result = orchestrator.run(incident={"incident_text": incident_text})
 	run_id = f"run_{len(RUNS) + 1}"
 	RUNS[run_id] = {"status": "completed", "result": result}
 	return RunResponse(run_id=run_id, status="completed", result=result)

@@ -36,14 +36,18 @@ def _filter_non_empty(chunks: List[str]) -> Tuple[List[str], List[int]]:
 	return filtered, indices
 
 
-def _ingest_text(text: str, source: str, path: str) -> Dict[str, int]:
+def _ingest_text(text: str, source: str, path: str, collection: str = None) -> Dict[str, int]:
 	chunks: List[str] = smart_chunk(text, max_tokens=400, overlap_tokens=60)
 	filtered, idxs = _filter_non_empty(chunks)
 	if not filtered:
 		raise ValueError("No non-empty chunks produced from document")
 	logger.info(f"Chunked into {len(chunks)} parts, {len(filtered)} non-empty")
-	vectors = embed_texts(filtered)
-	store = QdrantStore()
+	try:
+		vectors = embed_texts(filtered)
+	except Exception as e:
+		logger.warning(f"Embedding failed for document {path}: {e}; skipping ingest")
+		return {"chunks": 0, "upserted": 0}
+	store = QdrantStore(collection=collection) if collection else QdrantStore()
 	ids = [str(uuid.uuid4()) for _ in filtered]
 	payloads: List[Dict] = []
 	for out_pos, ch in enumerate(filtered):
@@ -58,13 +62,13 @@ def _ingest_text(text: str, source: str, path: str) -> Dict[str, int]:
 	return {"chunks": len(filtered), "upserted": len(ids)}
 
 
-def ingest_docx_to_qdrant(path: str, source: str = "knowledge_base") -> Dict[str, int]:
+def ingest_docx_to_qdrant(path: str, source: str = "knowledge_base", collection: str = None) -> Dict[str, int]:
 	logger.info(f"Loading DOCX: {path}")
 	text = load_docx_text(path)
-	return _ingest_text(text=text, source=source, path=path)
+	return _ingest_text(text=text, source=source, path=path, collection=collection)
 
 
-def ingest_text_to_qdrant(path: str, source: str = "knowledge_base_parsed") -> Dict[str, int]:
+def ingest_text_to_qdrant(path: str, source: str = "knowledge_base_parsed", collection: str = None) -> Dict[str, int]:
 	logger.info(f"Loading TEXT: {path}")
 	text = load_plain_text(path)
-	return _ingest_text(text=text, source=source, path=path)
+	return _ingest_text(text=text, source=source, path=path, collection=collection)

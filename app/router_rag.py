@@ -39,7 +39,8 @@ async def ingest_kb() -> IngestResponse:
 @router.post("/ingest_parsed", response_model=IngestResponse)
 async def ingest_parsed_kb() -> IngestResponse:
 	try:
-		stats = ingest_text_to_qdrant("data/parsed_knowledge_base.txt", source="knowledge_base_parsed")
+		# Use dedicated collection for knowledge base
+		stats = ingest_text_to_qdrant("data/parsed_knowledge_base.txt", source="knowledge_base_parsed", collection="imperial_court_knowledge_base")
 		return IngestResponse(**stats)
 	except Exception as e:
 		raise HTTPException(status_code=500, detail=str(e))
@@ -57,7 +58,12 @@ async def ingest_cases() -> IngestResponse:
 @router.post("/ingest_cases_csv", response_model=IngestResponse)
 async def ingest_cases_csv_endpoint() -> IngestResponse:
 	try:
-		stats = ingest_cases_csv("data/case_log.csv")
+		from pathlib import Path
+		clean = Path("data/case_log.cleaned.csv")
+		orig = Path("data/case_log.csv")
+		path = str(clean if clean.exists() else orig)
+		# Use dedicated collection for case history
+		stats = ingest_cases_csv(path, collection="imperial_court_case_history")
 		return IngestResponse(chunks=stats["chunks"], upserted=stats["upserted"], rows=stats["rows"])
 	except Exception as e:
 		raise HTTPException(status_code=500, detail=str(e))
