@@ -5,7 +5,9 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 
-from .db import get_engine
+from .db import get_engine, run_sql_script, execute_query, reset_engine
+from .db_transform import transform_mysql_to_postgres
+from .supabase_client import get_supabase_client
 from .models import Base
 from .seed import seed_vessels, seed_extras
 
@@ -64,7 +66,7 @@ class QueryResponse(BaseModel):
 
 class InsertRequest(BaseModel):
 	table: str
-	json: list[dict] | dict
+	data: list[dict] | dict
 
 
 class ListRequest(BaseModel):
@@ -106,6 +108,9 @@ async def init_db() -> InitResponse:
 @router.post("/init_orm", response_model=InitResponse)
 async def init_db_orm() -> InitResponse:
 	try:
+		# Reset engine to avoid prepared statement conflicts
+		reset_engine()
+		
 		engine = get_engine()
 		async with engine.begin() as conn:
 			# Drop views first to avoid dependency errors
@@ -137,8 +142,8 @@ async def run_query(req: QueryRequest) -> QueryResponse:
 async def sb_insert(req: InsertRequest) -> QueryResponse:
 	try:
 		sb = get_supabase_client()
-		data = sb.table(req.table).insert(req.json).execute()
-		rows = data.data or []
+		response = sb.table(req.table).insert(req.data).execute()
+		rows = response.data or []
 		return QueryResponse(rows=rows)
 	except Exception as e:
 		raise HTTPException(status_code=500, detail=str(e))

@@ -21,6 +21,16 @@ _engine: AsyncEngine | None = None
 _session_factory: async_sessionmaker[AsyncSession] | None = None
 
 
+def reset_engine() -> None:
+	"""Reset the database engine and session factory to avoid prepared statement conflicts."""
+	global _engine, _session_factory
+	if _engine is not None:
+		# Close existing engine
+		_engine.sync_engine.dispose()
+	_engine = None
+	_session_factory = None
+
+
 def _build_ssl_context() -> ssl.SSLContext:
 	ctx = ssl.create_default_context()
 	if has_certifi:
@@ -68,6 +78,9 @@ def get_engine() -> AsyncEngine:
 				sqlalchemy_url,
 				echo=False,
 				poolclass=NullPool,
+				connect_args={
+					"prepare_threshold": None,  # Disable prepared statements
+				},
 			)
 		else:
 			# asyncpg: remove sslmode from URL (we pass SSL context via connect_args)
