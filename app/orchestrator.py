@@ -181,6 +181,23 @@ class ImperialOrchestrator:
 		
 		logger.info("✅ MOCK MODE AGENT PROCESSING COMPLETED")
 		
+		# Generate escalation summary in mock mode
+		logger.info("🎫 Generating escalation summary with contact information...")
+		escalation_result = tools.generate_escalation_summary(
+			{"incident_analysis": {
+				"incident_type": incident_type,
+				"severity": severity,
+				"original_text": incident_text,
+				"database_insights_used": list(db_analysis.keys())
+			}},
+			db_analysis,
+			f"Strategic analysis: {strategy}. Review: {review}. Decision: {decision}"
+		)
+		
+		if "error" not in escalation_result:
+			logger.info(f"   ✅ Escalation summary generated: {escalation_result.get('incident_id', 'Unknown ID')}")
+			logger.info(f"   📞 Contact: {escalation_result.get('primary_contact', {}).get('name', 'Unknown')}")
+		
 		return {
 			"emperor": AGENTS["emperor"]["name"],
 			"incident_analysis": {
@@ -204,6 +221,10 @@ class ImperialOrchestrator:
 				f"清律 to update policy using {len(rag_context.get('knowledge_base', []))} KB references and operational data",
 				f"Monitor system health - Current EDI error rate: {db_analysis.get('system_health', {}).get('edi_health', {}).get('error_rate_percent', 'N/A')}%"
 			],
+			"escalation_summary": escalation_result.get("formatted_summary", "Escalation summary generation failed"),
+			"contact_information": escalation_result.get("primary_contact", {}),
+			"ticket_priority": escalation_result.get("ticket_priority", "P3 - Medium"),
+			"incident_id": escalation_result.get("incident_id", "Unknown")
 		}
 
 	def _crewai_run(self, incident: Dict[str, Any]) -> Dict[str, Any]:
@@ -211,230 +232,692 @@ class ImperialOrchestrator:
 		rag_context = incident.get("rag_context", {})
 		
 		logger.info("🤖 CREWAI AGENT WORKFLOW INITIATED")
-		logger.info(f"👥 Assembling Imperial Court: 太和智君 (Emperor), 智文 (Strategy), 明鏡 (Review)")
+		logger.info(f"👥 Assembling Expanded Imperial Court: 6 Specialized Agents")
 		
 		# Get database tool guidance for agents
 		tool_guidance = get_tool_guidance_text()
 		
-		logger.info("🏗️ Creating specialized agents with database tool access...")
+		logger.info("🏗️ Creating specialized multi-agent system with database tool access...")
 		
-		# Create agents with enhanced context and comprehensive database tool access
-		emperor = CrewAgent(
-			role="Emperor 太和智君 - Supreme Port Authority",
-			goal="Make evidence-based final decisions for port incidents using comprehensive database intelligence and strategic analysis",
-			backstory=f"""You are 太和智君 (Emperor of Harmonious Wisdom), the supreme decision-maker of the Imperial Court of the Port.
+		# Create expanded agent system with specialized roles
+		
+		# 1. Intelligence Gathering Agent - First Line Investigation
+		intelligence_agent = CrewAgent(
+			role="察信 (Field Censor) - Intelligence Gathering Specialist",
+			goal="Conduct comprehensive initial investigation and evidence collection using all available database tools",
+			backstory=f"""You are 察信 (Truth Seeker), the Imperial Court's premier intelligence gathering specialist.
 
-DIVINE MANDATE: Supreme oversight of all port operations with access to real-time intelligence systems.
+INVESTIGATION MANDATE: Comprehensive evidence collection using all available database intelligence systems.
 
-MANDATORY IMPERIAL PROTOCOL FOR ALL DECISIONS:
-1. BEGIN with tools.get_operational_overview() - Know your realm's current state
-2. ASSESS system stability with tools.check_system_health() - Understand existing stresses
-3. INVESTIGATE specific entities based on incident:
-   • Container issues: tools.get_container_details() + tools.search_containers()
-   • EDI/communication: tools.analyze_edi_messages() + tools.search_recent_incidents()
-   • Vessel operations: tools.get_vessel_details() + operational overview
-   • System issues: tools.check_system_health() + tools.search_recent_incidents()
-4. ANALYZE patterns with tools.search_recent_incidents() - Distinguish isolated vs systematic issues
+COMPLETE INVESTIGATION PROTOCOL:
+1. SYSTEM BASELINE: tools.get_operational_overview() + tools.check_system_health()
+2. INCIDENT TRIAGE: Extract keywords and classify incident type from text
+3. TARGETED INVESTIGATION:
+   - Container incidents: tools.search_containers() + tools.get_container_details()
+   - EDI incidents: tools.analyze_edi_messages() + tools.get_recent_edi_activity()
+   - Vessel incidents: tools.get_vessel_details() 
+   - System incidents: tools.check_system_health() deep dive
+4. PATTERN SEARCH: tools.search_recent_incidents() with relevant keywords
+5. EVIDENCE SYNTHESIS: Compile complete factual dossier
 
-IMPERIAL SEVERITY ASSESSMENT (based on database evidence):
-- HIGH: System errors >10% OR >10 recent similar incidents OR critical operations affected
-- MEDIUM: System errors 5-10% OR 3-10 similar incidents OR moderate operations affected  
-- LOW: System errors <5% AND <3 similar incidents AND minor operational impact
-
-EVIDENCE-BASED DECISION MAKING:
-✅ "Intelligence shows 15 containers in ERROR status affecting berth operations"
-❌ "There appear to be container issues"
-
-Ancient wisdom: "知己知彼，百戰不殆" - Know yourself and your enemy, never lose a battle.
-Query the database extensively to know the true state of your realm before issuing imperial edicts.""",
+Your duty: Gather ALL relevant evidence before any other agents begin analysis.
+Motto: "事實勝於雄辯" - Facts are more eloquent than speeches.""",
 			verbose=True,
 			temperature=0.2,
 		)
 		
-		secretariat_strategy = CrewAgent(
-			role="中書省 智文 - Strategic Analysis Minister",
-			goal="Conduct systematic incident analysis using comprehensive database intelligence and historical precedent",
-			backstory=f"""You are 智文 (Minister of Strategic Analysis), chief architect of Imperial Court responses.
+		# 2. Technical Analysis Agent - Deep Technical Investigation  
+		technical_agent = CrewAgent(
+			role="工智 (Ministry of Works) - Technical Analysis Expert",
+			goal="Perform deep technical analysis of system components, root cause investigation, and technical impact assessment",
+			backstory=f"""You are 工智 (Master of Technical Wisdom), the Imperial Court's chief technical analyst.
 
-ANALYTICAL MANDATE: Systematic investigation using {len(rag_context.get('case_history', []))} historical cases and real-time operational intelligence.
+TECHNICAL ANALYSIS MANDATE: Deep dive technical investigation and root cause analysis.
 
-MANDATORY 4-PHASE DATABASE INVESTIGATION PROTOCOL:
+TECHNICAL INVESTIGATION FRAMEWORK:
+1. RECEIVE evidence dossier from 察信 (Intelligence Agent)
+2. TECHNICAL DEEP DIVE:
+   - System Performance: Analyze error rates, throughput metrics, capacity utilization
+   - Component Analysis: Examine specific systems (EDI, TOS, PORTNET) affected
+   - Integration Points: Check API connections, message flows, data consistency
+   - Infrastructure Health: Network, database, application layer assessment
+3. ROOT CAUSE ANALYSIS:
+   - Timeline reconstruction using database timestamps
+   - Dependency mapping between affected systems
+   - Error correlation across multiple components
+4. TECHNICAL IMPACT ASSESSMENT:
+   - Current operational impact (quantified)
+   - Downstream risk assessment
+   - Recovery complexity estimation
 
-PHASE 1 - BASELINE ASSESSMENT (Always First):
-→ tools.get_operational_overview(): Current vessel count, container distribution, EDI activity
-→ tools.check_system_health(): EDI/API error rates, system stress indicators
+Your expertise: Transform raw evidence into technical understanding.
+Engineering principle: "工欲善其事，必先利其器" - To do good work, first sharpen your tools.""",
+			verbose=True,
+			temperature=0.3,
+		)
+		
+		# 3. Business Impact Agent - Operations and Business Analysis
+		business_agent = CrewAgent(
+			role="戶部 (Ministry of Finance) - Business Impact Analyst", 
+			goal="Assess operational and business impact, resource requirements, and strategic implications",
+			backstory=f"""You are 金策 (Financial Strategy), the Imperial Court's business impact assessment specialist.
 
-PHASE 2 - INCIDENT-SPECIFIC INVESTIGATION:
-Container Issues: tools.get_container_details() + tools.search_containers(status="ERROR")
-EDI Issues: tools.analyze_edi_messages() + tools.search_recent_incidents(keywords=["EDI"])
-Vessel Issues: tools.get_vessel_details() + tools.search_containers(vessel_name)
-System Issues: tools.check_system_health() + tools.search_recent_incidents(keywords=["API"])
+BUSINESS ANALYSIS MANDATE: Operational impact assessment and resource optimization.
 
-PHASE 3 - PATTERN ANALYSIS:
-→ tools.search_recent_incidents() with incident-specific keywords (12-48 hours back)
-→ Classify: ISOLATED (<3 similar), PATTERN (3-10 similar), SYSTEMATIC (>10 similar)
+BUSINESS IMPACT FRAMEWORK:
+1. OPERATIONAL IMPACT ANALYSIS:
+   - Service Level Assessment: Which operations are affected and how severely
+   - Customer Impact: Internal/external stakeholder effects
+   - Performance Metrics: KPI degradation measurement
+   - Resource Utilization: Current vs optimal resource allocation
+2. BUSINESS CONTINUITY:
+   - Workaround feasibility assessment
+   - Alternative process identification
+   - Service restoration priorities
+3. STRATEGIC IMPLICATIONS:
+   - Long-term operational risk
+   - Compliance and regulatory considerations  
+   - Stakeholder communication requirements
+4. RESOURCE OPTIMIZATION:
+   - Personnel allocation recommendations
+   - System resource reallocation
+   - Budget impact assessment
 
-PHASE 4 - STRATEGIC RESPONSE FRAMEWORK:
-Based on database evidence, recommend:
-- 工智 (Ministry of Works): Container operational issues, TOS discrepancies
-- 信儀 (Ministry of Protocol): EDI errors >5%, communication breakdowns
-- 維宦 (Maintenance Eunuchs): System health degradation, infrastructure issues
-- 察信 (Field Censors): Insufficient evidence, complex multi-system incidents
-
-Confucian principle: "學而不思則罔，思而不學則殆" - Learning without thinking is useless.
-Gather complete database evidence before strategic analysis.""",
+Your domain: Translate technical problems into business understanding.
+Wisdom: "取之有度，用之有節" - Take with measure, use with moderation.""",
 			verbose=True,
 			temperature=0.4,
 		)
 		
-		secretariat_review = CrewAgent(
-			role="門下省 明鏡 - Quality Validation Authority",
-			goal="Rigorous validation of analysis accuracy using quantitative database evidence and policy compliance verification", 
-			backstory=f"""You are 明鏡 (Mirror of Clarity), the court's supreme validation authority ensuring operational accuracy.
+		# 4. Communication Coordinator - Stakeholder Management
+		communication_agent = CrewAgent(
+			role="信儀 (Ministry of Protocol) - Communication Coordinator",
+			goal="Design communication strategy, stakeholder notifications, and escalation pathways",
+			backstory=f"""You are 信儀 (Master of Protocol), the Imperial Court's communication and escalation specialist.
 
-VALIDATION MANDATE: Rigorous verification using {len(rag_context.get('knowledge_base', []))} knowledge base references and quantitative operational data.
+COMMUNICATION MANDATE: Orchestrate all stakeholder communication and escalation protocols.
 
-COMPREHENSIVE DATABASE VALIDATION REQUIREMENTS:
+COMMUNICATION FRAMEWORK:
+1. STAKEHOLDER MAPPING:
+   - Internal teams: Technical, operations, management
+   - External parties: Customers, vendors, regulatory bodies
+   - Contact classification: Primary, secondary, emergency contacts
+2. COMMUNICATION STRATEGY:
+   - Message crafting for different audiences
+   - Timing and frequency optimization
+   - Channel selection (email, phone, emergency alerts)
+3. ESCALATION PATHWAY DESIGN:
+   - Progressive escalation triggers and timelines
+   - Authority level requirements for decisions
+   - Emergency bypass procedures
+4. COORDINATION MANAGEMENT:
+   - Cross-team synchronization requirements
+   - Status update schedules
+   - Resolution confirmation protocols
 
-EVIDENCE VERIFICATION CHECKLIST:
-□ All container claims verified with tools.get_container_details()
-□ System health assertions confirmed with tools.check_system_health()  
-□ EDI analysis validated with tools.analyze_edi_messages()
-□ Vessel information accuracy checked with tools.get_vessel_details()
-□ Incident patterns confirmed with tools.search_recent_incidents()
-□ Operational baseline verified with tools.get_operational_overview()
-
-QUANTITATIVE ACCURACY STANDARDS:
-- Error rates must cite specific percentages from tools.check_system_health()
-- Container counts must match tools.search_containers() results
-- EDI analysis must include actual message counts and error rates
-- Incident patterns must specify numbers from tools.search_recent_incidents()
-- Vessel details must match exact database records
-
-RESPONSE PROPORTIONALITY VERIFICATION:
-- HIGH SEVERITY: Must show >10% error rates OR >10 recent similar incidents
-- MEDIUM SEVERITY: Must show 5-10% error rates OR 3-10 recent similar incidents  
-- LOW SEVERITY: Must show <5% error rates AND <3 recent similar incidents
-
-QUALITY FAILURE MODES TO PREVENT:
-❌ Generic responses without specific database evidence
-❌ Severity assessments not matching quantitative data
-❌ Ministry recommendations without operational justification
-
-Mencius taught: "路雖邇，不行不至" - Though the road be near, it cannot be traveled without walking.
-Every claim must be walked through with database verification - no assumptions allowed.
-
-AUTHORITY: Reject any analysis lacking specific database evidence citations.""",
+Your responsibility: Ensure information flows efficiently to enable rapid response.
+Protocol: "信則人任焉" - When there is trust, people will take responsibility.""",
 			verbose=True,
 			temperature=0.3,
 		)
+		
+		# 5. Strategic Analysis Agent - High-Level Strategy (Enhanced)
+		secretariat_strategy = CrewAgent(
+			role="中書省 智文 - Strategic Synthesis Minister",
+			goal="Synthesize all specialist analysis into comprehensive strategic response framework",
+			backstory=f"""You are 智文 (Minister of Strategic Synthesis), orchestrator of specialized intelligence into unified strategy.
 
-		logger.info("📋 Creating specialized tasks with database investigation requirements...")
+STRATEGIC SYNTHESIS MANDATE: Integrate all specialist analysis into cohesive response strategy.
 
-		# Create tasks with RAG context and database tool requirements
-		analysis_task = CrewTask(
-			description=f"""CRITICAL: You MUST use database tools to gather operational context before analysis.
+SYNTHESIS FRAMEWORK:
+1. INTELLIGENCE INTEGRATION:
+   - Combine technical, business, and communication assessments
+   - Identify strategic patterns and implications
+   - Resolve conflicts between specialist recommendations
+2. STRATEGIC RESPONSE DESIGN:
+   - Multi-phase response plan development
+   - Resource allocation optimization across all domains
+   - Timeline coordination between technical and business actions
+3. RISK MANAGEMENT:
+   - Comprehensive risk assessment across all dimensions
+   - Contingency planning for multiple scenarios
+   - Success metrics and monitoring framework
+4. DECISION SUPPORT:
+   - Present clear options with trade-off analysis
+   - Recommendation prioritization and sequencing
+   - Implementation feasibility assessment
+
+Enhanced Role: You now orchestrate 4 specialist agents rather than conducting primary investigation.
+Philosophy: "統而不治，治而不統" - Coordinate without micromanaging, manage without controlling.""",
+			verbose=True,
+			temperature=0.4,
+		)
+		
+		# 6. Quality Validation Agent (Enhanced)
+		secretariat_review = CrewAgent(
+			role="門下省 明鏡 - Multi-Domain Validation Authority",
+			goal="Comprehensive validation across technical, business, communication, and strategic dimensions", 
+			backstory=f"""You are 明鏡 (Mirror of Universal Clarity), supreme validation authority across all specialist domains.
+
+MULTI-DOMAIN VALIDATION MANDATE: Rigorous verification across all specialist analysis areas.
+
+COMPREHENSIVE VALIDATION FRAMEWORK:
+1. TECHNICAL VALIDATION:
+   - Verify all database evidence and technical analysis accuracy
+   - Confirm root cause analysis logic and supporting data
+   - Validate technical impact assessments and recovery estimates
+2. BUSINESS VALIDATION:
+   - Confirm operational impact calculations and business metrics
+   - Verify resource requirement estimates and cost assessments
+   - Validate stakeholder impact analysis and continuity plans
+3. COMMUNICATION VALIDATION:
+   - Review stakeholder mapping completeness and accuracy
+   - Verify escalation pathway feasibility and contact validity
+   - Confirm communication timeline alignment with technical/business needs
+4. STRATEGIC VALIDATION:
+   - Cross-check strategic synthesis against specialist inputs
+   - Verify recommendation feasibility across all domains
+   - Confirm success metrics and monitoring framework adequacy
+5. INTEGRATION VALIDATION:
+   - Ensure consistency between all specialist analyses
+   - Identify and resolve cross-domain conflicts
+   - Verify comprehensive coverage of all incident aspects
+
+Enhanced Authority: Validate the work of 4 specialist agents plus strategic synthesis.
+Principle: "明鏡照形，古事知今" - Clear mirror reflects form, ancient events illuminate present.""",
+			verbose=True,
+			temperature=0.3,
+		)
+		
+		# 7. Emperor - Final Decision Maker (Enhanced for Multi-Agent Synthesis)
+		emperor = CrewAgent(
+			role="Emperor 太和智君 - Supreme Multi-Domain Authority",
+			goal="Synthesize all specialist intelligence and provide comprehensive incident analysis with precise classification",
+			backstory=f"""You are 太和智君 (Emperor of Supreme Harmony), ultimate decision-maker synthesizing intelligence from 5 specialist domains.
+
+IMPERIAL MANDATE: Provide comprehensive incident analysis with precise classification that enables automatic escalation.
+
+SPECIALIST INTELLIGENCE INTEGRATION:
+- 察信 Intelligence: Comprehensive evidence and investigation findings
+- 工智 Technical: Root cause analysis and technical impact assessment
+- 金策 Business: Operational impact and resource optimization
+- 信儀 Communication: Stakeholder management and escalation protocols
+- 智文 Strategy: Integrated response framework and risk management
+- 明鏡 Validation: Cross-domain verification and quality assurance
+
+IMPERIAL DECISION PROTOCOL:
+1. SYNTHESIZE all specialist intelligence into unified incident understanding
+2. CLASSIFY incident type precisely using exact terms: Container Management, EDI Communication, PORTNET System, Vessel Operations, or Others
+3. DETERMINE severity level clearly: High, Medium, or Low
+4. IDENTIFY root cause and affected systems from technical analysis
+5. PROVIDE comprehensive analysis summary with specific recommendations
+
+CRITICAL CLASSIFICATION REQUIREMENT:
+Your incident classification determines automatic contact selection by the escalation agent.
+Use EXACT terms: Container Management, EDI Communication, PORTNET System, Vessel Operations, or Others.
+
+Enhanced Wisdom: "兼聽則明，偏信則暗" - Listen to all specialists to achieve clarity, provide precise classification for proper escalation.""",
+			verbose=True,
+			temperature=0.2,
+		)
+		
+		# 8. Escalation Agent - Automated Contact Selection and Summary Generation
+		escalation_agent = CrewAgent(
+			role="Imperial Escalation Manager 朝廷",
+			goal="Generate definitive escalation summary with precise contact selection based on Emperor's analysis",
+			backstory=f"""You are the Imperial Escalation Manager, specialized in converting comprehensive incident analysis into actionable escalation summaries with the correct contact information.
+
+ESCALATION MANDATE: Transform Emperor's analysis into structured escalation summary with automatic contact selection.
+
+ESCALATION PROTOCOL:
+1. ANALYZE Emperor's comprehensive incident analysis carefully
+2. EXTRACT precise incident type and severity classification from the Emperor's text
+3. IDENTIFY specific technical findings and business impact details
+4. DETERMINE the single most relevant contact based on incident type:
+   - Container Management incidents → Mark Lee (mark.lee@psa123.com)
+   - EDI Communication incidents → Tom Tan (tom.tan@psa123.com) 
+   - PORTNET System incidents → Sarah Chen (sarah.chen@psa123.com)
+   - Vessel Operations incidents → David Liu (david.liu@psa123.com)
+   - Others/General incidents → Robert Wong (robert.wong@psa123.com)
+5. GENERATE structured escalation summary with the selected contact
+
+CLASSIFICATION EXTRACTION RULES:
+- Look for keywords: "container", "duplicate" → Container Management
+- Look for keywords: "edi", "message", "api" → EDI Communication
+- Look for keywords: "portnet", "port net" → PORTNET System
+- Look for keywords: "vessel", "ship" → Vessel Operations
+- Default or mixed keywords → Others
+
+OUTPUT FORMAT REQUIREMENTS:
+- Incident ID: Generate format INC-YYYYMMDD-HHMMSS
+- Incident Type: Use exact classification from above
+- Severity Level: High/Medium/Low from Emperor's analysis
+- Primary Contact: Single specific person with email (no generic titles)
+- Summary: Technical root cause + business impact + recommended actions
+- Timeline: Immediate, short-term, and long-term actions
+- Escalation Path: Next level contacts if needed
+
+CRITICAL: Output ONLY the formatted escalation summary with specific contact details. Do NOT use generic placeholders like '[Technical Team Lead Contact Information]'.
+
+Your role ensures Emperor's analysis becomes actionable escalation with the right person contacted.
+
+Principle: "令出如山，責任到人" - Orders must be clear as mountains, responsibility assigned to specific individuals.""",
+			verbose=True,
+			temperature=0.1,
+		)
+
+		logger.info("📋 Creating comprehensive multi-agent task workflow...")
+
+		# Create multi-phase task workflow with 6 specialized agents
+		
+		# Phase 1: Intelligence Gathering
+		intelligence_task = CrewTask(
+			description=f"""INTELLIGENCE GATHERING MISSION: Comprehensive evidence collection and initial investigation.
 
 INCIDENT TEXT:
 {incident_text}
 
-SIMILAR HISTORICAL CASES:
-{rag_context.get('case_history_summary', 'No similar cases found')}
+MANDATORY INVESTIGATION PROTOCOL:
+1. SYSTEM BASELINE ASSESSMENT:
+   - Execute tools.get_operational_overview() for current system state
+   - Execute tools.check_system_health() for error rates and stability metrics
+   
+2. INCIDENT CLASSIFICATION AND KEYWORD EXTRACTION:
+   - Analyze incident text for technical keywords (container, EDI, vessel, API, system)
+   - Classify incident type based on content and affected systems
+   
+3. TARGETED EVIDENCE COLLECTION:
+   Based on incident classification, execute appropriate database queries:
+   - Container incidents: tools.search_containers() + tools.get_container_details() 
+   - EDI/API incidents: tools.analyze_edi_messages() + tools.get_recent_edi_activity()
+   - Vessel incidents: tools.get_vessel_details() with relevant vessel information
+   - System incidents: Deep dive tools.check_system_health() analysis
+   
+4. PATTERN INVESTIGATION:
+   - Execute tools.search_recent_incidents() with incident-specific keywords
+   - Analyze historical patterns in last 12-48 hours
+   - Identify if incident is isolated, pattern-based, or systematic
+   
+5. EVIDENCE COMPILATION:
+   - Compile complete factual dossier with all database evidence
+   - Organize findings by system, timeline, and impact
+   - Prepare evidence package for specialist analysis
 
-REQUIRED ANALYSIS PROCESS:
-1. FIRST: Use tools.get_operational_overview() to understand current system baseline
-2. SECOND: Use tools.check_system_health() to assess system stability and error rates
-3. THIRD: Based on incident keywords, use appropriate tools:
-   - For container issues: tools.search_containers() and tools.get_container_details()
-   - For EDI issues: tools.analyze_edi_messages() and tools.get_recent_edi_activity()  
-   - For vessel issues: tools.get_vessel_details()
-4. FOURTH: Use tools.search_recent_incidents() with relevant keywords to find patterns
-5. FINALLY: Analyze incident type, severity, and strategy based on FACTUAL data retrieved
+DELIVERABLE: Comprehensive evidence dossier with all relevant database findings, system baseline, and pattern analysis.""",
+			expected_output="Complete evidence dossier including system baseline, targeted investigation results, pattern analysis, and organized factual findings ready for specialist analysis",
+			agent=intelligence_agent,
+		)
+		
+		# Phase 2A: Technical Analysis (Parallel)
+		technical_task = CrewTask(
+			description=f"""TECHNICAL ANALYSIS MISSION: Deep technical investigation and root cause analysis.
 
-DELIVERABLES:
-- Incident classification based on database evidence
-- Severity assessment considering current system health
-- Response strategy grounded in operational reality
-- Structured JSON output with database insights cited""",
-			expected_output="JSON analysis with incident_type, severity, database_evidence_used, system_health_context, and data-driven recommendations",
+PREREQUISITES: Receive evidence dossier from Intelligence Gathering Agent (察信).
+
+TECHNICAL INVESTIGATION FRAMEWORK:
+1. EVIDENCE REVIEW:
+   - Analyze all technical evidence collected by Intelligence Agent
+   - Identify technical systems and components involved
+   - Review error patterns and system health indicators
+   
+2. ROOT CAUSE ANALYSIS:
+   - Reconstruct incident timeline using database timestamps
+   - Map dependencies between affected systems (EDI ↔ TOS ↔ PORTNET)
+   - Analyze error correlation across multiple components
+   - Identify primary failure point and cascading effects
+   
+3. TECHNICAL IMPACT ASSESSMENT:
+   - Quantify current operational impact using metrics from evidence
+   - Assess downstream risks to interconnected systems
+   - Estimate recovery complexity and technical resource requirements
+   - Evaluate system stability and risk of further degradation
+   
+4. TECHNICAL RESPONSE RECOMMENDATIONS:
+   - Immediate technical actions to contain/resolve incident
+   - System restoration procedures and sequence
+   - Technical monitoring requirements during recovery
+   - Preventive measures to avoid recurrence
+
+DELIVERABLE: Technical analysis report with root cause, impact assessment, and technical response plan.""",
+			expected_output="Comprehensive technical analysis including root cause identification, impact quantification, recovery complexity assessment, and technical response recommendations",
+			agent=technical_agent,
+		)
+		
+		# Phase 2B: Business Impact Analysis (Parallel) 
+		business_task = CrewTask(
+			description=f"""BUSINESS IMPACT ANALYSIS MISSION: Operational impact assessment and resource optimization.
+
+PREREQUISITES: Receive evidence dossier from Intelligence Gathering Agent (察信).
+
+BUSINESS ANALYSIS FRAMEWORK:
+1. OPERATIONAL IMPACT ASSESSMENT:
+   - Analyze which port operations are affected and severity levels
+   - Assess customer/stakeholder impact (internal teams, external clients)
+   - Quantify performance degradation using operational metrics
+   - Evaluate resource utilization vs capacity constraints
+   
+2. BUSINESS CONTINUITY EVALUATION:
+   - Identify available workarounds and alternative processes
+   - Assess feasibility of temporary operational procedures
+   - Prioritize service restoration based on business criticality
+   - Evaluate compliance and regulatory implications
+   
+3. RESOURCE OPTIMIZATION ANALYSIS:
+   - Determine personnel resource requirements for resolution
+   - Assess system resource reallocation opportunities  
+   - Estimate budget impact and cost optimization options
+   - Evaluate vendor/contractor resource needs
+   
+4. STRATEGIC IMPACT ASSESSMENT:
+   - Analyze long-term operational risks
+   - Assess stakeholder relationship implications
+   - Evaluate reputation and service level impacts
+   - Recommend strategic communication approaches
+
+DELIVERABLE: Business impact analysis with operational effects, continuity options, resource requirements, and strategic implications.""",
+			expected_output="Comprehensive business analysis including operational impact quantification, continuity planning, resource optimization, and strategic implications assessment",
+			agent=business_agent,
+		)
+		
+		# Phase 2C: Communication Strategy (Parallel)
+		communication_task = CrewTask(
+			description=f"""COMMUNICATION COORDINATION MISSION: Stakeholder management and escalation pathway design.
+
+PREREQUISITES: Receive evidence dossier from Intelligence Gathering Agent (察信).
+
+COMMUNICATION STRATEGY FRAMEWORK:
+1. STAKEHOLDER MAPPING:
+   - Map all internal stakeholders (technical teams, operations, management)
+   - Identify external parties (customers, vendors, regulatory bodies)
+   - Classify contacts by priority and authority level (using contacts.json reference)
+   - Determine communication dependencies and approval chains
+   
+2. COMMUNICATION STRATEGY DESIGN:
+   - Craft appropriate messages for different audience types
+   - Design communication timing and frequency optimization
+   - Select optimal channels (email, phone, emergency alerts, dashboards)
+   - Plan progressive disclosure based on incident evolution
+   
+3. ESCALATION PATHWAY FRAMEWORK:
+   - Design escalation triggers and timeline thresholds
+   - Map authority levels required for different decision types
+   - Establish emergency bypass procedures for critical situations
+   - Define escalation handoff protocols between teams
+   
+4. COORDINATION REQUIREMENTS:
+   - Plan cross-team synchronization and status sharing
+   - Schedule regular status update cycles
+   - Design resolution confirmation and communication closure protocols
+   - Establish feedback loops for communication effectiveness
+
+DELIVERABLE: Communication strategy with stakeholder mapping, escalation pathways, and coordination protocols.""",
+			expected_output="Comprehensive communication plan including stakeholder mapping, escalation pathway design, message strategy, and coordination protocols for effective incident management",
+			agent=communication_agent,
+		)
+		
+		# Phase 3: Strategic Synthesis
+		strategic_task = CrewTask(
+			description=f"""STRATEGIC SYNTHESIS MISSION: Integrate all specialist intelligence into unified response strategy.
+
+PREREQUISITES: Receive analysis from Technical, Business, and Communication specialists.
+
+STRATEGIC INTEGRATION FRAMEWORK:
+1. MULTI-DOMAIN INTELLIGENCE INTEGRATION:
+   - Synthesize technical root cause with business impact assessment
+   - Integrate communication requirements with technical/business timelines
+   - Resolve conflicts between specialist recommendations
+   - Identify strategic patterns across all analysis domains
+   
+2. COMPREHENSIVE RESPONSE STRATEGY:
+   - Design multi-phase response plan coordinating all domains
+   - Optimize resource allocation across technical, operational, and communication needs
+   - Synchronize timelines between technical recovery and business continuity
+   - Balance immediate response with long-term strategic considerations
+   
+3. RISK MANAGEMENT INTEGRATION:
+   - Synthesize risks identified across technical, business, and communication domains
+   - Develop contingency plans for multiple scenario progressions
+   - Design comprehensive monitoring framework covering all aspects
+   - Establish success metrics spanning technical, operational, and stakeholder dimensions
+   
+4. DECISION SUPPORT PREPARATION:
+   - Present integrated options with multi-domain trade-off analysis
+   - Prioritize recommendations based on cross-domain impact assessment
+   - Assess implementation feasibility across all specialist areas
+   - Prepare comprehensive briefing for Emperor's final decision
+
+DELIVERABLE: Integrated strategic response framework ready for imperial validation and decision.""",
+			expected_output="Comprehensive strategic synthesis integrating technical, business, and communication analysis into unified response strategy with prioritized recommendations and implementation roadmap",
 			agent=secretariat_strategy,
 		)
 		
-		review_task = CrewTask(
-			description=f"""VALIDATION REQUIRED: Use database tools to verify the strategic analysis.
+		# Phase 4: Quality Validation
+		validation_task = CrewTask(
+			description=f"""MULTI-DOMAIN VALIDATION MISSION: Comprehensive verification across all specialist analyses.
 
-KNOWLEDGE BASE GUIDANCE:
-{rag_context.get('knowledge_base_summary', 'No relevant knowledge base entries found')}
+PREREQUISITES: Receive strategic synthesis and all specialist analyses.
 
-VALIDATION PROCESS:
-1. VERIFY system health claims using tools.check_system_health()
-2. CONFIRM any container/vessel details mentioned using specific lookup tools
-3. VALIDATE severity assessment against current operational metrics
-4. CHECK for similar recent incidents using tools.search_recent_incidents()
-5. ENSURE resource recommendations align with current operational capacity
+VALIDATION FRAMEWORK:
+1. TECHNICAL VALIDATION:
+   - Verify database evidence accuracy and technical analysis logic
+   - Confirm root cause analysis methodology and supporting data
+   - Validate technical impact assessments and recovery estimates
+   - Cross-check technical recommendations against system capabilities
+   
+2. BUSINESS VALIDATION:
+   - Confirm operational impact calculations and business metrics accuracy
+   - Verify resource requirement estimates and feasibility
+   - Validate stakeholder impact analysis and continuity plan viability
+   - Check business recommendations against organizational constraints
+   
+3. COMMUNICATION VALIDATION:
+   - Review stakeholder mapping completeness and contact accuracy
+   - Verify escalation pathway feasibility and authority alignment
+   - Confirm communication timeline synchronization with technical/business plans
+   - Validate message strategy appropriateness for different audiences
+   
+4. STRATEGIC VALIDATION:
+   - Cross-check strategic synthesis against all specialist inputs
+   - Verify recommendation integration and conflict resolution
+   - Confirm comprehensive coverage of all incident aspects
+   - Validate success metrics and monitoring framework adequacy
+   
+5. INTEGRATION QUALITY ASSURANCE:
+   - Ensure consistency across all specialist analyses
+   - Identify any remaining gaps or conflicts
+   - Verify feasibility of integrated response plan
+   - Confirm readiness for imperial decision-making
 
-POLICY REVIEW TASKS:
-1. Cross-reference analysis claims with actual database evidence
-2. Validate incident classification against both knowledge base and operational data
-3. Verify that recommended actions are feasible given current system state
-4. Check compliance with established protocols using factual operational context
-5. Identify gaps between policy guidance and operational reality
-6. Suggest data-driven refinements to the response plan
-
-CRITICAL: Your validation must be based on facts retrieved from database tools, not assumptions.""",
-			expected_output="Comprehensive validation report with database evidence, policy compliance assessment, and fact-checked refined recommendations",
+DELIVERABLE: Comprehensive validation report confirming analysis quality and strategic readiness.""",
+			expected_output="Multi-domain validation report confirming technical accuracy, business feasibility, communication viability, strategic integration quality, and overall readiness for final imperial decision",
 			agent=secretariat_review,
 		)
 		
+		# Phase 5: Imperial Decision
 		decision_task = CrewTask(
-			description="""FINAL DECISION: Synthesize all analysis and database insights into comprehensive response plan.
+			description=f"""IMPERIAL DECISION MISSION: Synthesize all specialist intelligence into comprehensive incident analysis.
 
-DECISION FRAMEWORK:
-1. REVIEW all database evidence gathered by strategic analysis and validation teams
-2. CONSIDER current system health and operational capacity constraints
-3. BALANCE immediate incident response with long-term system stability
-4. ALLOCATE resources based on factual operational data, not assumptions
+PREREQUISITES: Receive validated strategic synthesis and all specialist intelligence.
 
-IMPERIAL DECISION PROCESS:
-1. Synthesize strategic analysis and policy review into unified assessment
-2. Assign specific ministries/agents based on incident type and current capacity
-3. Set priority levels considering system health metrics and operational impact
-4. Establish resource allocation aligned with current operational constraints
-5. Create actionable timeline based on real system capabilities
-6. Include monitoring requirements using available database tools
+IMPERIAL SYNTHESIS PROTOCOL:
+1. COMPREHENSIVE INTELLIGENCE REVIEW:
+   - Synthesize evidence from Intelligence Gathering (察信)
+   - Integrate technical analysis from Technical Expert (工智)
+   - Consider business impact from Business Analyst (金策)
+   - Incorporate communication strategy from Protocol Master (信儀)
+   - Review strategic framework from Strategy Minister (智文)
+   - Validate against quality review from Validation Authority (明鏡)
 
-REQUIRED OUTPUT: Comprehensive response plan grounded in factual operational data with specific ministry assignments, evidence-based priorities, and measurable action items.""",
-			expected_output="Imperial decree with evidence-based response plan, ministry assignments, resource allocation based on operational capacity, and monitoring requirements using database tools",
+2. INCIDENT CLASSIFICATION (CRITICAL):
+   - Classify incident type precisely: Container Management, EDI Communication, PORTNET System, Vessel Operations, or Others
+   - Determine severity level: High, Medium, or Low based on impact analysis
+   - Identify root cause and affected systems from technical analysis
+   - State classification clearly using exact terms above
+
+3. COMPREHENSIVE ANALYSIS SUMMARY:
+   - Provide detailed incident description based on all agent findings
+   - Include technical root cause analysis from 工智
+   - Include business impact assessment from 金策  
+   - Include stakeholder communication plan from 信儀
+   - Include strategic response framework from 智文
+   - Include validation findings from 明鏡
+
+4. STRUCTURED OUTPUT REQUIREMENTS:
+   - State incident type clearly (use exact classification terms)
+   - State severity level clearly (High/Medium/Low)
+   - Provide comprehensive analysis summary
+   - Include recommended actions and timelines
+
+CRITICAL: Use precise classification terms as this determines escalation routing by the Escalation Manager.
+
+Previous findings from specialist agents will be provided by the CrewAI workflow execution.""",
+			expected_output="Comprehensive incident analysis with precise classification (Container Management/EDI Communication/PORTNET System/Vessel Operations/Others), severity level (High/Medium/Low), detailed findings from all agents, recommended actions, and timelines.",
 			agent=emperor,
 		)
+		
+		# Phase 6: Escalation Summary Generation
+		escalation_task = CrewTask(
+			description=f"""ESCALATION SUMMARY MISSION: Generate definitive escalation summary with precise contact selection.
 
-		logger.info("🏛️ Assembling Imperial Court crew with agents and tasks...")
+PREREQUISITES: Receive Emperor's comprehensive incident analysis with classification.
+
+ESCALATION GENERATION PROTOCOL:
+1. ANALYSIS EXTRACTION:
+   - Extract precise incident type from Emperor's analysis text
+   - Extract severity level (High/Medium/Low) from impact assessment
+   - Extract technical root cause and affected systems
+   - Extract business impact and operational effects
+   - Extract recommended actions and timelines
+
+2. CONTACT SELECTION LOGIC:
+   Based on the incident type extracted from Emperor's analysis:
+   - If incident involves containers, duplicates, manifest issues → Mark Lee (mark.lee@psa123.com)
+   - If incident involves EDI, messages, API, communication → Tom Tan (tom.tan@psa123.com)
+   - If incident involves PORTNET, port systems → Sarah Chen (sarah.chen@psa123.com)
+   - If incident involves vessels, ships, maritime operations → David Liu (david.liu@psa123.com)
+   - For general/mixed/other issues → Robert Wong (robert.wong@psa123.com)
+
+3. ESCALATION SUMMARY GENERATION:
+   Generate a structured escalation summary with format:
+   
+   **INCIDENT ESCALATION SUMMARY**
+   - Incident ID: INC-[YYYYMMDD-HHMMSS]
+   - Incident Type: [Extracted from Emperor's analysis]
+   - Severity: [High/Medium/Low from impact]
+   - Primary Contact: [Specific person with email based on type]
+   
+   **INCIDENT DETAILS:**
+   [Emperor's technical analysis summary]
+   
+   **BUSINESS IMPACT:**
+   [Operational effects from Emperor's analysis]
+   
+   **RECOMMENDED ACTIONS:**
+   - Immediate: [From Emperor's recommendations]
+   - Short-term: [Recovery steps]
+   - Long-term: [Prevention measures]
+   
+   **ESCALATION PATH:**
+   [Next level if primary contact unavailable]
+
+4. QUALITY REQUIREMENTS:
+   - Use SPECIFIC person names and emails (never generic titles)
+   - Include ALL critical information from Emperor's analysis
+   - Ensure professional formatting and clear action items
+   - Validate contact matches incident type precisely
+
+Previous analysis from Emperor provides all technical and business details needed.""",
+			expected_output="Professional escalation summary with specific contact person, incident details extracted from Emperor's analysis, business impact, recommended actions with timeline, and escalation procedures. Must include actual person name and email address based on incident type classification.",
+			agent=escalation_agent,
+		)
+
+		logger.info("🏛️ Assembling Expanded Imperial Court crew with 7 agents and 6-phase workflow...")
 		crew = Crew(
-			agents=[secretariat_strategy, secretariat_review, emperor], 
-			tasks=[analysis_task, review_task, decision_task],
+			agents=[
+				intelligence_agent,     # Phase 1: Evidence gathering
+				technical_agent,        # Phase 2A: Technical analysis  
+				business_agent,         # Phase 2B: Business analysis
+				communication_agent,    # Phase 2C: Communication strategy
+				secretariat_strategy,   # Phase 3: Strategic synthesis
+				secretariat_review,     # Phase 4: Multi-domain validation
+				emperor,                # Phase 5: Imperial decision
+				escalation_agent        # Phase 6: Escalation summary generation
+			], 
+			tasks=[
+				intelligence_task,      # 1. Evidence collection
+				technical_task,         # 2A. Technical deep dive
+				business_task,          # 2B. Business impact
+				communication_task,     # 2C. Communication strategy  
+				strategic_task,         # 3. Strategic synthesis
+				validation_task,        # 4. Quality validation
+				decision_task,          # 5. Imperial decision
+				escalation_task         # 6. Escalation summary generation
+			],
 			verbose=True
 		)
 		
-		logger.info("🚀 INITIATING CREWAI WORKFLOW EXECUTION...")
-		logger.info("   📊 Strategic Analysis Agent (智文) will investigate incident using database tools")
-		logger.info("   🔍 Policy Review Agent (明鏡) will validate analysis with database evidence")
-		logger.info("   👑 Emperor (太和智君) will make final decision based on synthesized intelligence")
+		logger.info("🚀 INITIATING EXPANDED CREWAI WORKFLOW EXECUTION...")
+		logger.info("   Phase 1: 察信 (Intelligence) - Comprehensive evidence gathering")
+		logger.info("   Phase 2A: 工智 (Technical) - Deep technical analysis and root cause")
+		logger.info("   Phase 2B: 金策 (Business) - Operational impact and resource assessment")
+		logger.info("   Phase 2C: 信儀 (Communication) - Stakeholder management and escalation design")
+		logger.info("   Phase 3: 智文 (Strategic) - Multi-domain synthesis and integration")
+		logger.info("   Phase 4: 明鏡 (Validation) - Comprehensive quality validation")
+		logger.info("   Phase 5: 太和智君 (Emperor) - Final decision and comprehensive analysis")
+		logger.info("   Phase 6: 朝廷 (Escalation Manager) - Automated escalation summary generation")
 		
 		try:
 			result_text = crew.kickoff()
 			logger.info("✅ CREWAI WORKFLOW COMPLETED SUCCESSFULLY")
 			logger.info(f"📜 Final Result Length: {len(str(result_text))} characters")
 			
+			# The escalation agent should have generated the proper escalation summary
+			logger.info("🎫 Escalation summary generated by specialized agent")
+			
+			# Parse result to extract escalation information if structured properly
+			# The result_text should now contain the escalation summary from the escalation agent
+			result_str = str(result_text)
+			
+			# Extract basic information for response structure (fallback parsing)
+			incident_type = "General"
+			severity = "Medium"
+			
+			# Simple extraction for response structure - agent should handle details
+			if "container" in result_str.lower():
+				incident_type = "Container Management" 
+			elif "edi" in result_str.lower():
+				incident_type = "EDI Communication"
+			elif "portnet" in result_str.lower():
+				incident_type = "PORTNET System"
+			elif "vessel" in result_str.lower():
+				incident_type = "Vessel Operations"
+			
+			if "high" in result_str.lower():
+				severity = "High"
+			elif "low" in result_str.lower():
+				severity = "Low"
+			
+			logger.info(f"   📋 Final classification: {incident_type} with {severity} severity")
+			
 			return {
 				"emperor": AGENTS["emperor"]["name"],
-				"incident_analysis": {"original_text": incident_text},
+				"incident_analysis": {
+					"incident_type": incident_type,
+					"severity": severity,
+					"original_text": incident_text,
+					"crew_analysis_used": True
+				},
 				"rag_results": {
 					"case_history_count": len(rag_context.get("case_history", [])),
 					"knowledge_base_count": len(rag_context.get("knowledge_base", [])),
 					"case_history": rag_context.get("case_history", []),
 					"knowledge_base": rag_context.get("knowledge_base", [])
 				},
-				"crew_output": str(result_text)
+				"crew_output": str(result_text),
+				"escalation_summary": str(result_text),  # The escalation agent's output
+				"contact_information": {"generated_by": "escalation_agent"},
+				"ticket_priority": f"P{'1' if severity == 'High' else '2' if severity == 'Medium' else '3'}",
+				"workflow_phases": 6
 			}
 		except Exception as e:
 			logger.error(f"❌ CrewAI execution failed: {e}")

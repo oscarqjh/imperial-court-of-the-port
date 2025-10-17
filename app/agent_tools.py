@@ -20,6 +20,7 @@ from .agents_db import (
     search_recent_issues,
     list_recent_edi_messages_orm
 )
+from .escalation_manager import EscalationManager, get_escalation_guidance_text
 
 
 def sync_wrapper(async_func: Callable) -> Callable:
@@ -51,6 +52,9 @@ def sync_wrapper(async_func: Callable) -> Callable:
 
 class AgentDatabaseTools:
     """Database tools that AI agents can use to retrieve operational information."""
+    
+    def __init__(self):
+        self.escalation_manager = EscalationManager()
     
     @staticmethod
     @sync_wrapper
@@ -242,7 +246,59 @@ class AgentDatabaseTools:
         
         Returns list of recent EDI messages with status and timing.
         """
-        return await list_recent_edi_messages_orm(limit=limit)
+        try:
+            return await list_recent_edi_messages_orm(limit=limit)
+        except Exception as e:
+            logger.error(f"Failed to get recent EDI activity: {e}")
+            return {"error": f"Database query failed: {str(e)}"}
+    
+    def generate_escalation_summary(self, incident_data: Dict[str, Any], database_analysis: Dict[str, Any], crew_analysis: str = "") -> Dict[str, Any]:
+        """
+        Generate comprehensive escalation summary with contact information and ticketing workflow.
+        
+        Use this tool when:
+        - Final incident response is ready
+        - Need to escalate to appropriate personnel
+        - Creating actionable resolution plan with specific contacts
+        - Generating ticket information for tracking systems
+        
+        Args:
+            incident_data: Complete incident analysis data
+            database_analysis: Database evidence and insights gathered
+            crew_analysis: Strategic analysis and recommendations from agents
+            
+        Returns:
+            Structured escalation summary with contact details and action plan
+        """
+        try:
+            logger.info("🎫 Agent generating escalation summary with contact information...")
+            
+            escalation_summary = self.escalation_manager.create_escalation_summary(
+                incident_data, database_analysis, crew_analysis
+            )
+            
+            formatted_summary = self.escalation_manager.format_escalation_summary(escalation_summary)
+            
+            logger.info(f"   ✅ Escalation summary generated for {escalation_summary.incident_id}")
+            logger.info(f"   📞 Primary contact: {escalation_summary.primary_contact.product_ops_manager}")
+            logger.info(f"   🎫 Ticket priority: {escalation_summary.ticket_priority}")
+            
+            return {
+                "escalation_summary": escalation_summary,
+                "formatted_summary": formatted_summary,
+                "incident_id": escalation_summary.incident_id,
+                "primary_contact": {
+                    "name": escalation_summary.primary_contact.product_ops_manager,
+                    "email": escalation_summary.primary_contact.email,
+                    "role": escalation_summary.primary_contact.role
+                },
+                "ticket_priority": escalation_summary.ticket_priority,
+                "estimated_resolution": escalation_summary.estimated_resolution_time
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to generate escalation summary: {e}")
+            return {"error": f"Escalation summary generation failed: {str(e)}"}
 
 
 # Tool descriptions for agent awareness
@@ -294,6 +350,12 @@ AGENT_TOOL_DESCRIPTIONS = {
         "description": "Get recent EDI message activity for monitoring and context",
         "when_to_use": "EDI monitoring, recent activity context, message flow verification",
         "example_usage": "tools.get_recent_edi_activity(limit=15)"
+    },
+    "escalation_summary": {
+        "function": "tools.generate_escalation_summary(incident_data, database_analysis, crew_analysis)",
+        "description": "Generate comprehensive escalation summary with specific contact information and ticketing workflow",
+        "when_to_use": "FINAL step - creating actionable escalation plan with contact details and timeline",
+        "example_usage": "tools.generate_escalation_summary(incident_data, database_analysis, 'analysis text')"
     }
 }
 
@@ -326,6 +388,16 @@ STRATEGIC USAGE GUIDELINES:
 5. For vessel-specific problems, use 'vessel_details'
 6. Use 'search_incidents' to find similar past issues and patterns
 7. Combine multiple tools for comprehensive analysis
+8. MANDATORY FINAL STEP: Use 'escalation_summary' to generate actionable escalation plan
+
+ESCALATION REQUIREMENTS:
+
+The final deliverable MUST be an escalation summary with:
+- Specific contact information from contacts.json
+- Ticket priority and resolution timeline
+- Actionable immediate steps with responsible parties
+- Stakeholder notification requirements
+- Monitoring and follow-up procedures
 
 THINKING PROCESS:
 Before making recommendations, agents should:
@@ -333,9 +405,12 @@ Before making recommendations, agents should:
 2. Gather specific incident-related data (search tools)
 3. Look for patterns in recent similar incidents
 4. Consider operational impact and resource requirements
-5. Make informed decisions based on retrieved data
+5. Generate escalation summary with specific contacts and actions
 
-Remember: The database contains real operational data. Use it to ground your analysis in facts rather than assumptions.
+Remember: The database contains real operational data. Use it to ground your analysis in facts rather than assumptions. The final output must be a practical escalation summary, not generic strategic advice.
 """
+    
+    # Add escalation guidance
+    guidance += "\n" + get_escalation_guidance_text()
     
     return guidance
