@@ -15,7 +15,7 @@ export default function Information() {
                     </h1>
                     
                     <p className="text-center text-gray-600 mb-10 text-lg max-w-3xl mx-auto">
-                        The Imperial Court of the Port utilizes multiple specialized agents, each executing a crucial role in our 6-phase incident management protocol—achieving unprecedented speed and precision.
+                        The Imperial Court of the Port utilizes multiple specialized agents, each executing a crucial role in our incident management protocol—achieving unprecedented speed and precision.
                     </p>
 
                     <div className="w-full flex justify-center">
