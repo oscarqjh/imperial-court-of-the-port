@@ -23,10 +23,7 @@ celery_app.conf.update(
     timezone="UTC",
     enable_utc=True,
     task_track_started=True,
-    # Remove task routing to use default queue
-    # task_routes={
-    #     "app.celery_tasks.process_incident": {"queue": "incidents"},
-    # },
+    result_expires=3600,  # Results expire after 1 hour
     worker_prefetch_multiplier=1,
     task_acks_late=True,
     worker_max_tasks_per_child=50,
