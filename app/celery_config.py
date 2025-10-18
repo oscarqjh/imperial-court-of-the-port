@@ -2,7 +2,7 @@
 Celery configuration for Imperial Court incident processing.
 """
 import os
-from celery import Celery
+import celery as Celery
 
 # Redis Cloud connection URL with authentication
 redis_url = os.getenv("CELERY_BROKER_URL", "redis://default:7VbDuaP8oaA1ldV2SMBXOk85fL5BHarS@redis-15612.c92.us-east-1-3.ec2.redns.redis-cloud.com:15612/0")
