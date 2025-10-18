@@ -26,6 +26,8 @@ DB_SSL_ALLOW_SELF_SIGNED=true
 CREWAI_TRACING_ENABLED=true
 EMBED_MODEL=text-embedding-3-small
 MOCK_MODE=false
+CREWAI_TRACING_ENABLED=true
+CELERY_BROKER_URL=redis://default:7VbDua.....
 ```
 
 3. Start Celery server:
