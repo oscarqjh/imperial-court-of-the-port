@@ -48,7 +48,7 @@ class ImperialOrchestrator:
 			"knowledge_base_summary": "\n".join([f"- {doc.get('text', '')[:200]}..." for doc in knowledge_base])
 		}
 
-	def run(self, incident: Dict[str, Any]) -> Dict[str, Any]:
+	def run(self, incident: Dict[str, Any], progress_callback=None) -> Dict[str, Any]:
 		incident_text = incident.get("incident_text", "")
 		if not incident_text:
 			return {"error": "No incident text provided"}
@@ -56,10 +56,16 @@ class ImperialOrchestrator:
 		logger.info("🏛️ IMPERIAL COURT INCIDENT PROCESSING INITIATED")
 		logger.info(f"📋 Incident Text: {incident_text[:100]}{'...' if len(incident_text) > 100 else ''}")
 		
+		if progress_callback:
+			progress_callback(15, "Gathering RAG context from historical cases...")
+		
 		# Gather RAG context first
 		logger.info("🔍 Gathering RAG context from historical cases and knowledge base...")
 		rag_context = self._gather_rag_context(incident_text)
 		logger.info(f"📚 RAG Context Retrieved - Cases: {len(rag_context.get('case_history', []))}, KB: {len(rag_context.get('knowledge_base', []))}")
+		
+		if progress_callback:
+			progress_callback(25, "RAG context gathered, preparing agent workflow...")
 		
 		# Add RAG context to incident data for agents
 		enhanced_incident = {
@@ -69,19 +75,28 @@ class ImperialOrchestrator:
 		
 		if not self.crewai_available:
 			logger.info("🎭 Running in MOCK_MODE; returning synthesized results")
-			return self._mock_run(enhanced_incident)
+			return self._mock_run(enhanced_incident, progress_callback)
 		
 		logger.info("🤖 Initiating CrewAI Agent Workflow...")
-		return self._crewai_run(enhanced_incident)
+		return self._crewai_run(enhanced_incident, progress_callback)
 
-	def _mock_run(self, incident: Dict[str, Any]) -> Dict[str, Any]:
+	def _mock_run(self, incident: Dict[str, Any], progress_callback=None) -> Dict[str, Any]:
 		incident_text = incident.get("incident_text", "")
 		rag_context = incident.get("rag_context", {})
 		
 		logger.info("🎭 MOCK MODE AGENT SIMULATION INITIATED")
 		
+		if progress_callback:
+			progress_callback(30, "Initializing Imperial Court agents...")
+		
+		import time
+		time.sleep(1)  # Simulate initialization time
+		
 		# Enhanced mock mode with database tool simulation
 		tools = AgentDatabaseTools()
+		
+		if progress_callback:
+			progress_callback(40, "Agent 太和智君 (Emperor) analyzing incident...")
 		
 		# Simulate agent using database tools for analysis
 		logger.info("📊 Simulating agent database tool usage...")
@@ -92,6 +107,10 @@ class ImperialOrchestrator:
 			operational_data = tools.get_operational_overview()
 			db_analysis["operational_overview"] = operational_data
 			logger.info(f"   ✅ Operational data retrieved: {operational_data.get('total_vessels', 'N/A')} vessels")
+			
+			time.sleep(1)  # Simulate processing time
+			if progress_callback:
+				progress_callback(50, "Agent 智文 (Grand Secretariat Strategy) reviewing data...")
 			
 			# Simulate system health check
 			logger.info("   🏥 Agent checking system health...")
@@ -106,6 +125,8 @@ class ImperialOrchestrator:
 			# Look for keywords in incident for targeted searches
 			text_lower = incident_text.lower()
 			if any(word in text_lower for word in ["container", "cntr", "msku", "oolu", "temu", "cmau"]):
+				if progress_callback:
+					progress_callback(60, "Agent 行吏 (Ministry Personnel) searching container details...")
 				logger.info("   📦 Agent detected container-related incident, searching containers...")
 				# Extract potential container number
 				words = incident_text.split()
@@ -118,6 +139,10 @@ class ImperialOrchestrator:
 							logger.info(f"   ✅ Container details retrieved for {word.upper()}")
 						break
 			
+			time.sleep(1)  # Simulate processing time
+			if progress_callback:
+				progress_callback(70, "Agent 明鏡 (Grand Secretariat Review) analyzing EDI messages...")
+			
 			if any(word in text_lower for word in ["edi", "message", "coparn", "coarri", "codeco"]):
 				logger.info("   📡 Agent detected EDI-related incident, analyzing messages...")
 				edi_data = tools.analyze_edi_messages(hours_back=12, limit=10)
@@ -129,6 +154,10 @@ class ImperialOrchestrator:
 			logger.warning(f"Mock database analysis failed: {e}")
 		
 		# Enhanced incident classification based on database insights
+		time.sleep(1)  # Simulate processing time
+		if progress_callback:
+			progress_callback(80, "Agent 公衡 (Censorate Chief) classifying incident severity...")
+		
 		logger.info("🧠 Agent analyzing incident type and severity...")
 		incident_type = "General"
 		severity = "Medium"
@@ -164,6 +193,10 @@ class ImperialOrchestrator:
 		logger.info(f"   ⚖️ Severity assessed as: {severity}")
 		
 		# Agent decision simulation
+		time.sleep(1)  # Simulate processing time
+		if progress_callback:
+			progress_callback(85, "All agents formulating strategic response...")
+		
 		logger.info("🎯 Agents formulating strategic response...")
 		strategy = f"智文 analyzes {incident_type} incident with severity {severity} using database insights"
 		review = f"明鏡 reviews policy for {incident_type} incidents using knowledge base and operational data"
@@ -172,6 +205,10 @@ class ImperialOrchestrator:
 		logger.info(f"   📝 Strategic Analysis (智文): {strategy}")
 		logger.info(f"   🔍 Policy Review (明鏡): {review}")
 		logger.info(f"   👑 Imperial Decision (太和智君): {decision}")
+		
+		time.sleep(1)  # Simulate processing time
+		if progress_callback:
+			progress_callback(90, "Agent 察信 (Censorate Field) generating escalation summary...")
 		
 		try:
 			recent = list_recent_edi_messages(5)
