@@ -58,6 +58,9 @@ class CeleryJobManager:
             # Get task status from Celery using run_id as task_id
             celery_task = celery_app.AsyncResult(run_id)
             
+            logger.debug(f"🔍 Celery task state: {celery_task.state}")
+            logger.debug(f"🔍 Celery task info: {celery_task.info}")
+            
             # Create job info based on Celery task state
             job_info = JobInfo(
                 run_id=run_id,

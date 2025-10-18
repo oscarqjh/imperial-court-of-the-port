@@ -1,7 +1,8 @@
-import type { Message } from "./chat-interface"
+import type { Message } from "@/types/chat-interface"
 import { Avatar } from "@/components/ui/avatar"
 import { Sparkles, User, FileText } from "lucide-react"
 import { cn } from "@/lib/utils"
+import LocalVideoPlayer from "./videoEmbed"
 
 interface ChatMessagesProps {
   messages: Message[]
@@ -33,7 +34,7 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
             >
               {message.files && message.files.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 sm:gap-2 pb-2">
-                  {message.files.map((file) => (
+                  {message.files.map((file: any) => (
                     <div
                       key={file.id}
                       className={cn(
@@ -69,10 +70,14 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
               </div>
             </Avatar>
             <div className="rounded-2xl border border-border bg-card px-3 py-2.5 sm:px-4 sm:py-3">
+              <div className="flex flex-col gap-4">
+              <p>Our agents are hard at work. We will provide you with a response shortly. Here is a look behind the scenes:</p>
+              <LocalVideoPlayer src="https://drive.google.com/file/d/1OM2g1TBI4ZltZKz0G4gCGcGhwIPXvhom/view?usp=sharing"/>
               <div className="flex gap-1">
                 <div className="h-2 w-2 animate-bounce rounded-full bg-primary [animation-delay:-0.3s]" />
                 <div className="h-2 w-2 animate-bounce rounded-full bg-primary [animation-delay:-0.15s]" />
                 <div className="h-2 w-2 animate-bounce rounded-full bg-primary" />
+              </div>
               </div>
             </div>
           </div>

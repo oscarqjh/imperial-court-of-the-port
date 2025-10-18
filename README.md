@@ -26,6 +26,20 @@ DB_SSL_ALLOW_SELF_SIGNED=true
 CREWAI_TRACING_ENABLED=true
 EMBED_MODEL=text-embedding-3-small
 MOCK_MODE=false
+CREWAI_TRACING_ENABLED=true
+CELERY_BROKER_URL=redis://default:7VbDua.....
+```
+
+3. Start Celery server:
+
+```powershell
+python start_celery_worker.py
+```
+
+3. Start Celery server:
+
+```powershell
+python start_celery_worker.py
 ```
 
 3. Run the server (development):
@@ -204,3 +218,74 @@ The full `crew_output` contains more detailed diagnostics, recommended steps, an
 - `app/rag_*` — ingestion, chunking, embeddings, and Qdrant wrapper.
 
 If you'd like, I can also add a small example script (Python) that calls `/incident/run`, waits for the response, and extracts the primary contact and historical solution section automatically. Tell me which format you prefer (PowerShell, Python, or Node.js) and I will add it.
+
+## Background jobs (Celery + Redis)
+
+The `/incident/run` endpoint now submits incident analysis jobs to a background queue (Celery) and immediately returns a `run_id` (the Celery task id). This lets the frontend submit work without blocking and poll for progress using the `run_id`.
+
+Key points
+
+- `POST /incident/run` returns JSON with the Celery `run_id` (task id). Save this id in the frontend to poll status.
+- `GET /incident/run/{run_id}` returns a status object with:
+  - `status`: one of `pending`, `processing`/`started`, `success`, or `failure`.
+  - `progress`: integer percent (0-100) estimated by the orchestrator.
+  - `current_step`: short string describing the current phase (e.g. "Gathering RAG context", "Executing CrewAI workflow").
+  - `result`: present when status is `success` — the task return value (includes `crew_output`, `rag_results`, etc.).
+
+Starting the server and the worker (PowerShell)
+
+1. Start the FastAPI server (development):
+
+```powershell
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+2. Start a Celery worker (use the same environment variables as the server so Celery can reach Redis/Qdrant/etc). Replace the broker/backend URL in `app/celery_config.py` or set `CELERY_BROKER_URL` / `CELERY_RESULT_BACKEND` in your environment.
+
+```powershell
+# from the repo root, with your venv activated
+celery -A app.celery_tasks worker --loglevel=info --concurrency=2
+```
+
+Notes on Redis and configuration
+
+- The project uses Redis as the Celery broker and result backend. If you use a hosted Redis (Redis Cloud), use the full connection string (including password) in `app/celery_config.py` or export it to `CELERY_BROKER_URL` and `CELERY_RESULT_BACKEND`.
+- If Redis previously contained corrupted task metadata (worker crashes with ValueError about exception info), flush the Redis DB used by Celery (careful: this removes all data in that Redis instance). Only do this for development/test instances.
+
+Polling example (PowerShell)
+
+After you receive a `run_id` from `POST /incident/run`, poll like this:
+
+```powershell
+$runId = 'the-task-id-from-post'
+while ($true) {
+    $status = Invoke-RestMethod -Uri "http://localhost:8000/incident/run/$runId" -Method Get
+    Write-Host "Status: $($status.status) - $($status.progress)% - $($status.current_step)"
+    if ($status.status -eq 'success' -or $status.status -eq 'failure') { break }
+    Start-Sleep -Seconds 2
+}
+```
+
+Quick curl example:
+
+```bash
+RUN_ID=the-task-id-from-post
+while true; do
+  curl -s http://localhost:8000/incident/run/$RUN_ID | jq -r '.status,.progress,.current_step'
+  sleep 2
+done
+```
+
+Test scripts
+
+- `debug_progress.py` — submits a job and polls until complete, printing progress updates.
+- `test_persistence.py` — useful to verify that `run_id` persists across server reloads (uvicorn --reload) because task state is stored in Redis/Celery.
+- `simple_test.py` — minimal example that posts a job and prints the final `crew_output`.
+
+Troubleshooting
+
+- If you see `404` when polling a `run_id`, ensure the Celery worker is running and the `run_id` you received is the Celery task id returned by the POST call. Uvicorn reload will clear any in-memory job store — using Celery task ids avoids that problem.
+- If workers crash on startup or when updating task metadata, check Redis for corrupted entries. For development you can flush the DB with `redis-cli FLUSHDB` (or the equivalent command in your hosted Redis console).
+- If you need finer-grained per-agent visibility inside CrewAI, note that CrewAI's `crew.kickoff()` is an internal execution step. The repo includes extra progress callbacks during agent creation and pre/post kickoff phases to make progress more informative, but precise live per-agent step reporting may require instrumenting or running agents under explicit orchestration.
+
+If you'd like, I can add a small example Python script that calls `/incident/run`, waits, and extracts the primary contact and historical solution sections from `crew_output`.

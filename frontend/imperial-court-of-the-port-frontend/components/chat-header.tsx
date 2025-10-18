@@ -1,6 +1,7 @@
 import { Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "./theme-toggle"
+import Link from 'next/link'
 
 export function ChatHeader() {
   return (
@@ -15,6 +16,9 @@ export function ChatHeader() {
 
         <div className="flex items-center gap-1 sm:gap-2">
           <ThemeToggle />
+          <Link href="/dashboard">
+            <Button variant="ghost" size="sm" className="hidden sm:inline-flex">Dashboard</Button>
+          </Link>
           <Button variant="ghost" size="sm" className="hidden sm:inline-flex">
             New Chat
           </Button>

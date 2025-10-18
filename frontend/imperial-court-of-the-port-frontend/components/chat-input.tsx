@@ -6,7 +6,7 @@ import { useState, useRef, type KeyboardEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Paperclip, Send, X } from "lucide-react"
-import type { UploadedFile } from "./chat-interface"
+import type { UploadedFile } from "@/types/chat-interface"
 
 interface ChatInputProps {
   onSendMessage: (content: string) => void
@@ -41,6 +41,7 @@ export function ChatInput({ onSendMessage, onFilesSelected, uploadedFiles, onRem
       name: file.name,
       size: file.size,
       type: file.type,
+      data: file, // store native File for uploads
     }))
     onFilesSelected(uploadedFileObjects)
     if (fileInputRef.current) {

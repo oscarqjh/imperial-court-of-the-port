@@ -90,7 +90,7 @@ class ImperialOrchestrator:
 			progress_callback(30, "Initializing Imperial Court agents...")
 		
 		import time
-		time.sleep(1)  # Simulate initialization time
+		time.sleep(2)  # Simulate initialization time - increased for visibility
 		
 		# Enhanced mock mode with database tool simulation
 		tools = AgentDatabaseTools()
@@ -108,7 +108,7 @@ class ImperialOrchestrator:
 			db_analysis["operational_overview"] = operational_data
 			logger.info(f"   ✅ Operational data retrieved: {operational_data.get('total_vessels', 'N/A')} vessels")
 			
-			time.sleep(1)  # Simulate processing time
+			time.sleep(2)  # Simulate processing time - increased for visibility
 			if progress_callback:
 				progress_callback(50, "Agent 智文 (Grand Secretariat Strategy) reviewing data...")
 			
@@ -139,7 +139,7 @@ class ImperialOrchestrator:
 							logger.info(f"   ✅ Container details retrieved for {word.upper()}")
 						break
 			
-			time.sleep(1)  # Simulate processing time
+			time.sleep(2)  # Simulate processing time - increased for visibility
 			if progress_callback:
 				progress_callback(70, "Agent 明鏡 (Grand Secretariat Review) analyzing EDI messages...")
 			
@@ -154,7 +154,7 @@ class ImperialOrchestrator:
 			logger.warning(f"Mock database analysis failed: {e}")
 		
 		# Enhanced incident classification based on database insights
-		time.sleep(1)  # Simulate processing time
+		time.sleep(2)  # Simulate processing time - increased for visibility
 		if progress_callback:
 			progress_callback(80, "Agent 公衡 (Censorate Chief) classifying incident severity...")
 		
@@ -206,7 +206,7 @@ class ImperialOrchestrator:
 		logger.info(f"   🔍 Policy Review (明鏡): {review}")
 		logger.info(f"   👑 Imperial Decision (太和智君): {decision}")
 		
-		time.sleep(1)  # Simulate processing time
+		time.sleep(2)  # Simulate processing time - increased for visibility
 		if progress_callback:
 			progress_callback(90, "Agent 察信 (Censorate Field) generating escalation summary...")
 		
@@ -264,15 +264,21 @@ class ImperialOrchestrator:
 			"incident_id": escalation_result.get("incident_id", "Unknown")
 		}
 
-	def _crewai_run(self, incident: Dict[str, Any]) -> Dict[str, Any]:
+	def _crewai_run(self, incident: Dict[str, Any], progress_callback=None) -> Dict[str, Any]:
 		incident_text = incident.get("incident_text", "")
 		rag_context = incident.get("rag_context", {})
 		
 		logger.info("🤖 CREWAI AGENT WORKFLOW INITIATED")
 		logger.info(f"👥 Assembling Expanded Imperial Court: 6 Specialized Agents")
 		
+		if progress_callback:
+			progress_callback(35, "Assembling 6-agent Imperial Court system...")
+		
 		# Get database tool guidance for agents
 		tool_guidance = get_tool_guidance_text()
+		
+		if progress_callback:
+			progress_callback(40, "Creating Agent 察信 (Intelligence Gathering Specialist)...")
 		
 		logger.info("🏗️ Creating specialized multi-agent system with database tool access...")
 		
@@ -303,6 +309,9 @@ Motto: "事實勝於雄辯" - Facts are more eloquent than speeches.""",
 			temperature=0.2,
 		)
 		
+		if progress_callback:
+			progress_callback(42, "Creating Agent 工智 (Technical Analysis Expert)...")
+		
 		# 2. Technical Analysis Agent - Deep Technical Investigation  
 		technical_agent = CrewAgent(
 			role="工智 (Ministry of Works) - Technical Analysis Expert",
@@ -332,6 +341,9 @@ Engineering principle: "工欲善其事，必先利其器" - To do good work, fi
 			verbose=True,
 			temperature=0.3,
 		)
+		
+		if progress_callback:
+			progress_callback(44, "Creating Agent 金策 (Business Impact Analyst)...")
 		
 		# 3. Business Impact Agent - Operations and Business Analysis
 		business_agent = CrewAgent(
@@ -465,6 +477,9 @@ Principle: "明鏡照形，古事知今" - Clear mirror reflects form, ancient e
 			verbose=True,
 			temperature=0.3,
 		)
+		
+		if progress_callback:
+			progress_callback(46, "Creating Agent 太和智君 (Emperor - Supreme Authority)...")
 		
 		# 7. Emperor - Final Decision Maker (Enhanced for Multi-Agent Synthesis)
 		emperor = CrewAgent(
@@ -967,6 +982,9 @@ Previous analysis from Emperor and Historical Solution Agent provides all needed
 			agent=escalation_agent,
 		)
 
+		if progress_callback:
+			progress_callback(48, "Assembling Imperial Court crew with 8 agents...")
+		
 		logger.info("🏛️ Assembling Expanded Imperial Court crew with 8 agents and 7-phase workflow...")
 		crew = Crew(
 			agents=[
@@ -1006,59 +1024,67 @@ Previous analysis from Emperor and Historical Solution Agent provides all needed
 		logger.info("   Phase 7: 朝廷 (Escalation Manager) - Automated escalation summary with proper contacts")
 		
 		try:
+			if progress_callback:
+				progress_callback(50, "Starting 7-phase CrewAI agent workflow...")
+			
 			result_text = crew.kickoff()
+		
 			logger.info("✅ CREWAI WORKFLOW COMPLETED SUCCESSFULLY")
 			logger.info(f"📜 Final Result Length: {len(str(result_text))} characters")
 			
-			# The escalation agent should have generated the proper escalation summary
-			logger.info("🎫 Escalation summary generated by specialized agent")
+			if progress_callback:
+				progress_callback(95, "CrewAI analysis complete, finalizing results...")
 			
-			# Parse result to extract escalation information if structured properly
-			# The result_text should now contain the escalation summary from the escalation agent
-			result_str = str(result_text)
+				# The escalation agent should have generated the proper escalation summary
+				logger.info("🎫 Escalation summary generated by specialized agent")
+				
+				# Parse result to extract escalation information if structured properly
+				# The result_text should now contain the escalation summary from the escalation agent
+				result_str = str(result_text)
+				
+				# Extract basic information for response structure (fallback parsing)
+				incident_type = "General"
+				severity = "Medium"
+				
+				# Simple extraction for response structure - agent should handle details
+				if "container" in result_str.lower():
+					incident_type = "Container Management" 
+				elif "edi" in result_str.lower():
+					incident_type = "EDI Communication"
+				elif "portnet" in result_str.lower():
+					incident_type = "PORTNET System"
+				elif "vessel" in result_str.lower():
+					incident_type = "Vessel Operations"
+				
+				if "high" in result_str.lower():
+					severity = "High"
+				elif "low" in result_str.lower():
+					severity = "Low"
+				
+				logger.info(f"   📋 Final classification: {incident_type} with {severity} severity")
+				
+				return {
+					"emperor": AGENTS["emperor"]["name"],
+					"incident_analysis": {
+						"incident_type": incident_type,
+						"severity": severity,
+						"original_text": incident_text,
+						"crew_analysis_used": True
+					},
+					"rag_results": {
+						"case_history_count": len(rag_context.get("case_history", [])),
+						"knowledge_base_count": len(rag_context.get("knowledge_base", [])),
+						"case_history": rag_context.get("case_history", []),
+						"knowledge_base": rag_context.get("knowledge_base", [])
+					},
+					"crew_output": str(result_text),
+					"contact_information": {"generated_by": "escalation_agent"},
+					"ticket_priority": f"P{'1' if severity == 'High' else '2' if severity == 'Medium' else '3'}",
+					"workflow_phases": 7
+				}
 			
-			# Extract basic information for response structure (fallback parsing)
-			incident_type = "General"
-			severity = "Medium"
-			
-			# Simple extraction for response structure - agent should handle details
-			if "container" in result_str.lower():
-				incident_type = "Container Management" 
-			elif "edi" in result_str.lower():
-				incident_type = "EDI Communication"
-			elif "portnet" in result_str.lower():
-				incident_type = "PORTNET System"
-			elif "vessel" in result_str.lower():
-				incident_type = "Vessel Operations"
-			
-			if "high" in result_str.lower():
-				severity = "High"
-			elif "low" in result_str.lower():
-				severity = "Low"
-			
-			logger.info(f"   📋 Final classification: {incident_type} with {severity} severity")
-			
-			return {
-				"emperor": AGENTS["emperor"]["name"],
-				"incident_analysis": {
-					"incident_type": incident_type,
-					"severity": severity,
-					"original_text": incident_text,
-					"crew_analysis_used": True
-				},
-				"rag_results": {
-					"case_history_count": len(rag_context.get("case_history", [])),
-					"knowledge_base_count": len(rag_context.get("knowledge_base", [])),
-					"case_history": rag_context.get("case_history", []),
-					"knowledge_base": rag_context.get("knowledge_base", [])
-				},
-				"crew_output": str(result_text),
-				"contact_information": {"generated_by": "escalation_agent"},
-				"ticket_priority": f"P{'1' if severity == 'High' else '2' if severity == 'Medium' else '3'}",
-				"workflow_phases": 7
-			}
 		except Exception as e:
 			logger.error(f"❌ CrewAI execution failed: {e}")
 			logger.warning("🔄 Falling back to mock mode...")
 			# Fallback to mock if CrewAI fails
-			return self._mock_run(incident)
+			return self._mock_run(incident, progress_callback)
