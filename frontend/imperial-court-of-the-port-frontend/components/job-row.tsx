@@ -40,13 +40,13 @@ export function JobRow({ job, onRefresh }: Props) {
     }
   };
 
-  // Extract escalation summary from job result
-  const getEscalationSummary = () => {
+  // Extract crew output from job result (instead of escalation_summary)
+  const getCrewOutput = () => {
     if (!job.result || typeof job.result !== "object") {
       return null;
     }
 
-    return job.result.escalation_summary || null;
+    return job.result.crew_output || null;
   };
 
   // Check if there's incident information
@@ -209,20 +209,68 @@ export function JobRow({ job, onRefresh }: Props) {
             );
           })()}
 
-          {/* Escalation Summary */}
+          {/* Crew Output Summary */}
           {(() => {
-            const escalationSummary = getEscalationSummary();
-            if (!escalationSummary) return null;
+            const crewOutput = getCrewOutput();
+            if (!crewOutput) return null;
+
+            // Helper function to render markdown-like content as HTML
+            const renderMarkdownContent = (content: string) => {
+              return content.split("\n").map((line, index) => {
+                // Handle headers (** text **)
+                if (line.includes("**") && line.includes("**")) {
+                  const parts = line.split("**");
+                  return (
+                    <div key={index} className="mb-2">
+                      {parts.map((part, partIndex) =>
+                        partIndex % 2 === 1 ? (
+                          <strong
+                            key={partIndex}
+                            className="text-orange-900 font-bold"
+                          >
+                            {part}
+                          </strong>
+                        ) : (
+                          <span key={partIndex}>{part}</span>
+                        )
+                      )}
+                    </div>
+                  );
+                }
+
+                // Handle bullet points (- text)
+                if (line.trim().startsWith("- ")) {
+                  return (
+                    <div key={index} className="ml-4 mb-1">
+                      <span className="text-orange-700">•</span>
+                      <span className="ml-2">{line.trim().substring(2)}</span>
+                    </div>
+                  );
+                }
+
+                // Handle empty lines
+                if (line.trim() === "") {
+                  return <div key={index} className="mb-2"></div>;
+                }
+
+                // Regular lines
+                return (
+                  <div key={index} className="mb-1">
+                    {line}
+                  </div>
+                );
+              });
+            };
 
             return (
               <div>
                 <h3 className="font-semibold mb-3 text-orange-800">
-                  🚨 Escalation Summary
+                  🤖 Crew Analysis & Escalation Summary
                 </h3>
                 <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 overflow-auto max-h-96">
-                  <pre className="text-sm whitespace-pre-wrap font-mono leading-relaxed text-gray-800">
-                    {escalationSummary}
-                  </pre>
+                  <div className="text-sm leading-relaxed text-gray-800">
+                    {renderMarkdownContent(crewOutput)}
+                  </div>
                 </div>
               </div>
             );
