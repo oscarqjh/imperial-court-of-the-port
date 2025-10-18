@@ -26,6 +26,11 @@ export function ChatHeader() {
               Home
             </Button>
           </Link>
+          <Link href="/about">
+            <Button variant="ghost" size="sm" className="hidden sm:inline-flex">
+              About
+            </Button>
+          </Link>
           <Button variant="ghost" size="icon" className="sm:hidden h-9 w-9">
             <span className="text-lg">+</span>
           </Button>
