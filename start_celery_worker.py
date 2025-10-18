@@ -15,7 +15,7 @@ if __name__ == "__main__":
         "worker",
         "--loglevel=info",
         "--pool=solo",
-        "--concurrency=4",
+        "--concurrency=1",
         "--queues=incidents,celery",
         "--hostname=worker@%h",
         "-E"

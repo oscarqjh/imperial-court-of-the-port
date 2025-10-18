@@ -18,7 +18,11 @@ def simple_test():
     try:
         submit_response = requests.post(
             f"{base_url}/incident/run",
-            data={"incident_text": "Simple test incident"}
+            json={
+                "incident_type": "general", 
+                "severity": "medium",
+                "payload": {"test": "Simple test incident", "timestamp": time.time()}
+            }
         )
         
         if submit_response.status_code != 200:

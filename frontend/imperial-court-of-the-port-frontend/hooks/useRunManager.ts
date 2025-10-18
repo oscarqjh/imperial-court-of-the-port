@@ -1,13 +1,25 @@
-"use client"
+"use client";
 
-import { useCallback, useEffect, useRef, useState } from 'react'
-import type { Job, JobFile } from '@/types/job'
-import runService from '@/services/runService'
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { Job, IncidentRequest } from "@/types/job";
+import runService from "@/services/runService";
 
-type StartRunOptions = {
-  // payload shape expected by backend (files handled elsewhere)
-  payload: any
-  label?: string
+/**
+ * Map backend status values to frontend status values
+ */
+function mapBackendStatusToFrontend(backendStatus: string): Job["status"] {
+  switch (backendStatus) {
+    case "queued":
+      return "pending";
+    case "processing":
+      return "processing";
+    case "completed":
+      return "success";
+    case "failed":
+      return "failure";
+    default:
+      return "unknown";
+  }
 }
 
 /**
@@ -21,94 +33,155 @@ type StartRunOptions = {
  * - Open/Closed: behaviors can be extended via callbacks and options.
  */
 export function useRunManager() {
-  const [jobs, setJobs] = useState<Job[]>([])
+  const [jobs, setJobs] = useState<Job[]>([]);
 
   // Keep timers in ref so we can clear later
-  const timers = useRef<Record<string, number>>({})
+  const timers = useRef<Record<string, number>>({});
 
   useEffect(() => {
     return () => {
       // cleanup timers on unmount
-      Object.values(timers.current).forEach((id) => window.clearInterval(id))
-    }
-  }, [])
+      Object.values(timers.current).forEach((id) => window.clearInterval(id));
+    };
+  }, []);
 
   const addOrUpdateJob = useCallback((job: Job) => {
     setJobs((prev) => {
-      const idx = prev.findIndex((j) => j.run_id === job.run_id)
-      if (idx === -1) return [job, ...prev]
-      const copy = [...prev]
-      copy[idx] = { ...copy[idx], ...job }
-      return copy
-    })
-  }, [])
+      const idx = prev.findIndex((j) => j.run_id === job.run_id);
+      if (idx === -1) return [job, ...prev];
+      const copy = [...prev];
+      copy[idx] = { ...copy[idx], ...job };
+      return copy;
+    });
+  }, []);
 
-  const pollJob = useCallback((run_id: string) => {
-    // avoid double timers
-    if (timers.current[run_id]) return
+  const pollJob = useCallback(
+    (run_id: string) => {
+      // avoid double timers
+      if (timers.current[run_id]) return;
 
-    const id = window.setInterval(async () => {
-      try {
-        const updated = await runService.getRun(run_id)
-        addOrUpdateJob(updated)
+      const id = window.setInterval(async () => {
+        try {
+          const updated = await runService.getRun(run_id);
+          // Map backend status to frontend status
+          const normalizedJob: Job = {
+            ...updated,
+            status: mapBackendStatusToFrontend(updated.status as string),
+          };
+          addOrUpdateJob(normalizedJob);
 
-        if (updated.status === 'completed' || updated.status === 'failed') {
-          window.clearInterval(id)
-          delete timers.current[run_id]
+          if (
+            normalizedJob.status === "success" ||
+            normalizedJob.status === "failure"
+          ) {
+            window.clearInterval(id);
+            delete timers.current[run_id];
+          }
+        } catch (err) {
+          console.error(`Error polling job ${run_id}:`, err);
+          // on error, mark job as unknown and stop polling after some tries
+          addOrUpdateJob({
+            run_id,
+            status: "unknown",
+            created_at: new Date().toISOString(),
+          });
+          window.clearInterval(id);
+          delete timers.current[run_id];
         }
-      } catch (err) {
-        // on error, mark job as unknown and stop polling after some tries
-        addOrUpdateJob({ run_id, status: 'unknown', created_at: new Date().toISOString(), input_files: [] })
-        window.clearInterval(id)
-        delete timers.current[run_id]
+      }, 5000);
+
+      timers.current[run_id] = id;
+    },
+    [addOrUpdateJob]
+  );
+
+  const startRun = useCallback(
+    async (request: IncidentRequest, label?: string) => {
+      // start run via service
+      const job = await runService.startRun(request);
+      const normalized: Job = {
+        ...job,
+        status: mapBackendStatusToFrontend(job.status as string),
+        label: label,
+      };
+      addOrUpdateJob(normalized);
+
+      // if not finished, start polling
+      if (normalized.status !== "success" && normalized.status !== "failure") {
+        pollJob(normalized.run_id);
       }
-    }, 5000)
 
-    timers.current[run_id] = id
-  }, [addOrUpdateJob])
+      return normalized;
+    },
+    [addOrUpdateJob, pollJob]
+  );
 
-  const startRun = useCallback(async ({ payload, label }: StartRunOptions) => {
-    // start run via service
-    const job = await runService.startRun(payload)
-    const normalized: Job = {
-      run_id: job.run_id,
-      status: job.status,
-      created_at: job.created_at || new Date().toISOString(),
-      input_files: (job.input_files || []) as JobFile[],
-      result: job.result,
-      label: label,
-    }
-    addOrUpdateJob(normalized)
+  const loadJobs = useCallback(
+    async (limit: number = 20) => {
+      try {
+        console.log("📋 Loading jobs from backend...");
+        const loadedJobs = await runService.getJobs(limit);
 
-    // if not finished, start polling
-    if (normalized.status !== 'completed' && normalized.status !== 'failed') {
-      pollJob(normalized.run_id)
-    }
+        console.log("📊 Loaded jobs data:", loadedJobs);
 
-    return normalized
-  }, [addOrUpdateJob, pollJob])
+        if (Array.isArray(loadedJobs)) {
+          // Convert backend status to frontend status
+          const normalizedJobs: Job[] = loadedJobs.map((jobData: any) => ({
+            run_id: jobData.run_id,
+            status: mapBackendStatusToFrontend(jobData.status),
+            created_at: jobData.created_at,
+            started_at: jobData.started_at,
+            completed_at: jobData.completed_at,
+            result: jobData.result,
+            error: jobData.error,
+            progress: jobData.progress,
+            current_step: jobData.current_step,
+          }));
 
-  const refreshAll = useCallback(() => {
-    jobs.forEach((j) => {
-      if (j.status !== 'completed' && j.status !== 'failed') pollJob(j.run_id)
-    })
-  }, [jobs, pollJob])
+          console.log(`✅ Loaded ${normalizedJobs.length} jobs from backend`);
+          setJobs(normalizedJobs);
+
+          // Start polling for any active jobs
+          normalizedJobs.forEach((job) => {
+            if (job.status === "pending" || job.status === "processing") {
+              pollJob(job.run_id);
+            }
+          });
+
+          return normalizedJobs;
+        } else {
+          console.warn("❌ Invalid jobs response format:", loadedJobs);
+          return [];
+        }
+      } catch (error) {
+        console.error("❌ Error loading jobs:", error);
+        throw error; // Re-throw so components can handle the error
+      }
+    },
+    [pollJob]
+  );
+
+  const refreshAll = useCallback(async () => {
+    // Reload all jobs from backend instead of just polling existing ones
+    await loadJobs();
+  }, [loadJobs]);
 
   const stopPolling = useCallback((run_id: string) => {
-    const t = timers.current[run_id]
+    const t = timers.current[run_id];
     if (t) {
-      window.clearInterval(t)
-      delete timers.current[run_id]
+      window.clearInterval(t);
+      delete timers.current[run_id];
     }
-  }, [])
+  }, []);
 
   return {
     jobs,
     startRun,
+    loadJobs,
     refreshAll,
     stopPolling,
     setJobs,
-  }
+  };
 }
 
-export default useRunManager
+export default useRunManager;

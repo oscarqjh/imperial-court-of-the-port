@@ -12,12 +12,17 @@ except Exception:
 from .agents import AGENTS
 from .agents_db import list_recent_edi_messages
 from .agent_tools import AgentDatabaseTools, get_tool_guidance_text
+from .config import settings
 
 
 class ImperialOrchestrator:
 	def __init__(self) -> None:
-		self.mock_mode = os.getenv("MOCK_MODE", "true").lower() == "true"
+		# Use config settings instead of direct environment variable access
+		self.mock_mode = settings.mock_mode
 		self.crewai_available = external_available and not self.mock_mode
+		
+		logger.info(f"🔧 Orchestrator initialized - Mock Mode: {self.mock_mode}, CrewAI Available: {self.crewai_available}")
+		logger.info(f"🔧 External Available: {external_available}, Settings Mock Mode: {settings.mock_mode}")
 
 	def _search_collection(self, query_text: str, collection: str, top_k: int = 3) -> List[Dict[str, Any]]:
 		"""Search specific Qdrant collection for RAG context."""

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Form
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
 from datetime import datetime
@@ -10,7 +10,9 @@ router = APIRouter(prefix="/incident", tags=["incident"])
 
 
 class IncidentRequest(BaseModel):
-	incident_text: str
+	incident_type: str
+	severity: str
+	payload: Dict[str, Any]
 
 
 class RunResponse(BaseModel):
@@ -30,10 +32,15 @@ class JobListResponse(BaseModel):
 
 
 @router.post("/run", response_model=RunResponse)
-async def run_incident(incident_text: str = Form(...)):
+async def run_incident(request: IncidentRequest):
 	"""Submit an incident for background processing and return a run_id."""
 	logger.info("🚨 NEW INCIDENT RECEIVED via API")
-	logger.info(f"📝 Incident Text: {incident_text[:100]}{'...' if len(incident_text) > 100 else ''}")
+	logger.info(f"📝 Incident Type: {request.incident_type}")
+	logger.info(f"⚖️  Severity: {request.severity}")
+	logger.info(f"📊 Payload: {str(request.payload)[:100]}{'...' if len(str(request.payload)) > 100 else ''}")
+	
+	# Convert structured request to incident text for the orchestrator
+	incident_text = f"Incident Type: {request.incident_type}\nSeverity: {request.severity}\nDetails: {request.payload}"
 	
 	try:
 		# Submit job to background processing

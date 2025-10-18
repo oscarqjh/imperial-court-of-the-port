@@ -49,12 +49,12 @@ def process_incident(self, incident_text: str) -> Dict[str, Any]:
         # Process the incident with progress callbacks
         result = orchestrator.run(incident={"incident_text": incident_text}, progress_callback=progress_callback)
         
-        # Update final progress
+        # Update final progress to 100% before completing
         self.update_state(
             state="PROCESSING",
             meta={
                 "current_step": "Analysis complete, finalizing results",
-                "progress": 95
+                "progress": 100
             }
         )
         
