@@ -1,0 +1,6 @@
+fastapi[standard]
+celery[redis]
+sqlalchemy
+pydantic
+pandas
+flower

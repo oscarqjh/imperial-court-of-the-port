@@ -25,7 +25,13 @@ app.add_middleware(
 
 @app.get("/health")
 async def health() -> Dict[str, str]:
-	return {"status": "ok"}
+	return {"status": "ok", "service": "imperial-court-backend"}
+
+@app.get("/health/ready")
+async def readiness() -> Dict[str, str]:
+	# Add more sophisticated readiness checks here if needed
+	# For example, check database connectivity, Redis connectivity, etc.
+	return {"status": "ready", "service": "imperial-court-backend"}
 
 
 app.include_router(incidents_router)

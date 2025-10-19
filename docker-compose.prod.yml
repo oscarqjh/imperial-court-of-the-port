@@ -1,0 +1,89 @@
+version: "3.8"
+
+services:
+  # FastAPI Application - Production
+  fastapi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - QDRANT_URL=${QDRANT_URL}
+      - QDRANT_API_KEY=${QDRANT_API_KEY}
+      - QDRANT_COLLECTION=${QDRANT_COLLECTION}
+      - EMBED_MODEL=${EMBED_MODEL}
+      - MOCK_MODE=false
+      - SUPABASE_DB_URL=${SUPABASE_DB_URL}
+      - DB_SSL_ALLOW_SELF_SIGNED=${DB_SSL_ALLOW_SELF_SIGNED}
+      - CREWAI_TRACING_ENABLED=${CREWAI_TRACING_ENABLED}
+    restart: unless-stopped
+    command:
+      [
+        "uvicorn",
+        "app.main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+        "--workers",
+        "4",
+      ]
+
+  # Celery Worker - Production
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - QDRANT_URL=${QDRANT_URL}
+      - QDRANT_API_KEY=${QDRANT_API_KEY}
+      - QDRANT_COLLECTION=${QDRANT_COLLECTION}
+      - EMBED_MODEL=${EMBED_MODEL}
+      - MOCK_MODE=false
+      - SUPABASE_DB_URL=${SUPABASE_DB_URL}
+      - DB_SSL_ALLOW_SELF_SIGNED=${DB_SSL_ALLOW_SELF_SIGNED}
+      - CREWAI_TRACING_ENABLED=${CREWAI_TRACING_ENABLED}
+    restart: unless-stopped
+    command:
+      [
+        "celery",
+        "--app=app.celery_config.celery_app",
+        "worker",
+        "--loglevel=info",
+        "--concurrency=2",
+      ]
+
+  # Celery Beat (if you need scheduled tasks)
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    restart: unless-stopped
+    command:
+      [
+        "celery",
+        "--app=app.celery_config.celery_app",
+        "beat",
+        "--loglevel=info",
+      ]
+
+  # Celery Flower for monitoring (optional in production)
+  celery-flower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5555:5555"
+    environment:
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+    restart: unless-stopped
+    command:
+      ["celery", "--app=app.celery_config.celery_app", "flower", "--port=5555"]

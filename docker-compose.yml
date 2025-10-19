@@ -1,0 +1,76 @@
+version: "3.8"
+
+services:
+  # FastAPI Application
+  fastapi:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - QDRANT_URL=${QDRANT_URL}
+      - QDRANT_API_KEY=${QDRANT_API_KEY}
+      - QDRANT_COLLECTION=${QDRANT_COLLECTION}
+      - EMBED_MODEL=${EMBED_MODEL}
+      - MOCK_MODE=${MOCK_MODE}
+      - SUPABASE_DB_URL=${SUPABASE_DB_URL}
+      - DB_SSL_ALLOW_SELF_SIGNED=${DB_SSL_ALLOW_SELF_SIGNED}
+      - CREWAI_TRACING_ENABLED=${CREWAI_TRACING_ENABLED}
+    volumes:
+      - ./data:/app/data # Mount data directory
+    depends_on:
+      - redis
+    command:
+      [
+        "uvicorn",
+        "app.main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+        "--reload",
+      ]
+
+  # Celery Worker
+  celery-worker:
+    build: .
+    environment:
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - QDRANT_URL=${QDRANT_URL}
+      - QDRANT_API_KEY=${QDRANT_API_KEY}
+      - QDRANT_COLLECTION=${QDRANT_COLLECTION}
+      - EMBED_MODEL=${EMBED_MODEL}
+      - MOCK_MODE=${MOCK_MODE}
+      - SUPABASE_DB_URL=${SUPABASE_DB_URL}
+      - DB_SSL_ALLOW_SELF_SIGNED=${DB_SSL_ALLOW_SELF_SIGNED}
+      - CREWAI_TRACING_ENABLED=${CREWAI_TRACING_ENABLED}
+    volumes:
+      - ./data:/app/data # Mount data directory
+    depends_on:
+      - redis
+    command: ["python", "start_celery_worker.py"]
+
+  # Celery Flower (optional - for monitoring)
+  celery-flower:
+    build: .
+    ports:
+      - "5555:5555"
+    environment:
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+    depends_on:
+      - redis
+    command:
+      ["celery", "--broker=${CELERY_BROKER_URL}", "flower", "--port=5555"]
+
+  # Local Redis (optional - if not using Redis Cloud)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:
