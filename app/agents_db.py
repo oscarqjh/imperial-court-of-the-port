@@ -362,60 +362,66 @@ async def get_system_health_metrics() -> Dict[str, Any]:
 		one_day_ago = now - timedelta(days=1)
 		
 		# EDI message health
-		edi_last_hour = await session.execute(
+		edi_last_hour_result = await session.execute(
 			select(func.count(EdiMessage.edi_id))
 			.where(EdiMessage.sent_at >= one_hour_ago)
 		)
+		edi_last_hour_count = edi_last_hour_result.scalar()
 		
-		edi_errors_last_hour = await session.execute(
+		edi_errors_last_hour_result = await session.execute(
 			select(func.count(EdiMessage.edi_id))
 			.where(and_(
 				EdiMessage.sent_at >= one_hour_ago,
 				EdiMessage.status == 'ERROR'
 			))
 		)
+		edi_errors_last_hour_count = edi_errors_last_hour_result.scalar()
 		
 		# API event health
-		api_events_last_hour = await session.execute(
+		api_events_last_hour_result = await session.execute(
 			select(func.count(ApiEvent.api_id))
 			.where(ApiEvent.event_ts >= one_hour_ago)
 		)
+		api_events_last_hour_count = api_events_last_hour_result.scalar()
 		
-		api_errors_last_hour = await session.execute(
+		api_errors_last_hour_result = await session.execute(
 			select(func.count(ApiEvent.api_id))
 			.where(and_(
 				ApiEvent.event_ts >= one_hour_ago,
 				ApiEvent.http_status >= 400
 			))
 		)
+		api_errors_last_hour_count = api_errors_last_hour_result.scalar()
 		
 		# Container operation metrics
-		containers_in_operation = await session.execute(
+		containers_in_operation_result = await session.execute(
 			select(func.count(Container.container_id))
 			.where(Container.status.in_(['TRANSHIP', 'IN_YARD', 'ON_VESSEL', 'LOADED']))
 		)
+		containers_in_operation_count = containers_in_operation_result.scalar()
 		
 		# Recent vessel advice
-		active_vessel_advice = await session.execute(
+		active_vessel_advice_result = await session.execute(
 			select(func.count(VesselAdvice.vessel_advice_no))
 			.where(VesselAdvice.effective_end_datetime.is_(None))
 		)
+		active_vessel_advice_count = active_vessel_advice_result.scalar()
 		
 		return {
 			"timestamp": now.isoformat(),
 			"edi_health": {
-				"messages_last_hour": edi_last_hour.scalar(),
-				"errors_last_hour": edi_errors_last_hour.scalar(),
-				"error_rate_percent": round((edi_errors_last_hour.scalar() / max(1, edi_last_hour.scalar())) * 100, 2)
+				"messages_last_hour": edi_last_hour_count,
+				"errors_last_hour": edi_errors_last_hour_count,
+				"error_rate_percent": round((edi_errors_last_hour_count / max(1, edi_last_hour_count)) * 100, 2)
 			},
 			"api_health": {
-				"events_last_hour": api_events_last_hour.scalar(),
-				"errors_last_hour": api_errors_last_hour.scalar(),
-				"error_rate_percent": round((api_errors_last_hour.scalar() / max(1, api_events_last_hour.scalar())) * 100, 2)
+				"events_last_hour": api_events_last_hour_count,
+				"errors_last_hour": api_errors_last_hour_count,
+				"error_rate_percent": round((api_errors_last_hour_count / max(1, api_events_last_hour_count)) * 100, 2)
 			},
 			"operations": {
-				"containers_in_operation": containers_in_operation.scalar(),
-				"active_vessel_advice": active_vessel_advice.scalar()
+				"containers_in_operation": containers_in_operation_count,
+				"active_vessel_advice": active_vessel_advice_count
 			}
 		}
 

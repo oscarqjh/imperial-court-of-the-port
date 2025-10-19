@@ -9,3 +9,7 @@ qdrant_client
 openpyxl
 pydantic_settings
 loguru
+crewai
+crewai-tools
+asyncpg
+psycopg[async]
