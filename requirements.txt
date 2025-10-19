@@ -169,6 +169,7 @@ urllib3==2.5.0
 uvicorn==0.37.0
 loguru==0.7.3
 docx2txt
+pydantic_settings
     # via
     #   fastapi
     #   fastapi-cli
