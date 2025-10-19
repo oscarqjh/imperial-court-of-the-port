@@ -12,7 +12,12 @@ app = FastAPI(title="Imperial Court of the Port", version="0.1.0")
 origins = [
     "http://localhost:3000",  # or wherever your frontend runs
     "http://127.0.0.1:3000",
-	"https://imperial-court-of-the-port.vercel.app/"
+		"https://imperial-court-of-the-port.vercel.app/",
+		"https://imperial-court-of-the-port.vercel.app",
+		"https://imperial-court-of-the-port-oscarqjhs-projects.vercel.app/",
+		"https://imperial-court-of-the-port-oscarqjhs-projects.vercel.app",
+		"https://imperial-court-of-the-port-mpb0txdov-oscarqjhs-projects.vercel.app/",
+		"https://imperial-court-of-the-port-mpb0txdov-oscarqjhs-projects.vercel.app"
 ]
 
 app.add_middleware(
