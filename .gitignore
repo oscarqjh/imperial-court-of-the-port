@@ -4,3 +4,4 @@
 /.venv/
 __pycache__/*
 .vscode/
+/my-project-venv/

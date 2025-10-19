@@ -10,6 +10,8 @@ anyio==4.11.0
     #   starlette
     #   watchfiles
 billiard==4.2.2
+qdrant_client
+openpyxl
     # via celery
 celery==5.5.3
     # via
@@ -165,6 +167,8 @@ tzdata==2025.2
 urllib3==2.5.0
     # via sentry-sdk
 uvicorn==0.37.0
+loguru==0.7.3
+docx2txt
     # via
     #   fastapi
     #   fastapi-cli
