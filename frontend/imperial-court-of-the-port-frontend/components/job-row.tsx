@@ -165,8 +165,8 @@ export function JobRow({ job, onRefresh }: Props) {
             if (!incidentInfo) return null;
 
             return (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="font-semibold mb-3 text-blue-800">
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <h3 className="font-semibold mb-3 text-blue-800 dark:text-blue-200">
                   📋 Incident Summary
                 </h3>
                 <div className="grid grid-cols-2 gap-4 text-sm">
@@ -226,7 +226,7 @@ export function JobRow({ job, onRefresh }: Props) {
                         partIndex % 2 === 1 ? (
                           <strong
                             key={partIndex}
-                            className="text-orange-900 font-bold"
+                            className="text-orange-900 dark:text-orange-100 font-bold"
                           >
                             {part}
                           </strong>
@@ -242,7 +242,9 @@ export function JobRow({ job, onRefresh }: Props) {
                 if (line.trim().startsWith("- ")) {
                   return (
                     <div key={index} className="ml-4 mb-1">
-                      <span className="text-orange-700">•</span>
+                      <span className="text-orange-700 dark:text-orange-300">
+                        •
+                      </span>
                       <span className="ml-2">{line.trim().substring(2)}</span>
                     </div>
                   );
@@ -264,11 +266,11 @@ export function JobRow({ job, onRefresh }: Props) {
 
             return (
               <div>
-                <h3 className="font-semibold mb-3 text-orange-800">
+                <h3 className="font-semibold mb-3 text-orange-800 dark:text-orange-200">
                   🤖 Crew Analysis & Escalation Summary
                 </h3>
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 overflow-auto max-h-96">
-                  <div className="text-sm leading-relaxed text-gray-800">
+                <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4 overflow-auto max-h-96">
+                  <div className="text-sm leading-relaxed text-gray-800 dark:text-gray-200">
                     {renderMarkdownContent(crewOutput)}
                   </div>
                 </div>
@@ -279,8 +281,8 @@ export function JobRow({ job, onRefresh }: Props) {
           {/* Full Result Data */}
           <div>
             <h3 className="font-semibold mb-3">📊 Complete Result Data</h3>
-            <div className="bg-gray-50 rounded-lg p-4 overflow-auto max-h-96">
-              <pre className="text-sm whitespace-pre-wrap">
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 overflow-auto max-h-96">
+              <pre className="text-sm whitespace-pre-wrap text-gray-900 dark:text-gray-100">
                 {JSON.stringify(job.result, null, 2)}
               </pre>
             </div>
@@ -313,9 +315,11 @@ export function JobRow({ job, onRefresh }: Props) {
           </div>
 
           <div>
-            <h3 className="font-semibold mb-2 text-red-600">Error Details:</h3>
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-sm text-red-700 whitespace-pre-wrap">
+            <h3 className="font-semibold mb-2 text-red-600 dark:text-red-400">
+              Error Details:
+            </h3>
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+              <p className="text-sm text-red-700 dark:text-red-300 whitespace-pre-wrap">
                 {job.error}
               </p>
             </div>

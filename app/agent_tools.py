@@ -30,12 +30,27 @@ def sync_wrapper(async_func: Callable) -> Callable:
         func_name = async_func.__name__
         logger.info(f"🛠️ Agent tool invoked: {func_name}({', '.join(str(arg) for arg in args[:2])}{', ...' if len(args) > 2 else ''})")
         try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # If in async context, we need to use asyncio.create_task
-                # But CrewAI typically runs in sync context, so this should work
+            # Check if there's a running event loop
+            try:
+                loop = asyncio.get_running_loop()
+                # If we're in an async context with a running loop, we can't use run_until_complete
+                # This shouldn't happen in CrewAI, but handle it gracefully
+                logger.warning(f"   ⚠️ Running loop detected for {func_name}, cannot execute async function synchronously")
+                return {"error": "Cannot execute async function in running event loop context"}
+            except RuntimeError:
+                # No running loop, this is expected for sync contexts
+                pass
+            
+            # Try to get existing event loop or create new one
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_closed():
+                    # Loop is closed, create a new one
+                    asyncio.set_event_loop(asyncio.new_event_loop())
+                    loop = asyncio.get_event_loop()
                 result = loop.run_until_complete(async_func(*args, **kwargs))
-            else:
+            except RuntimeError:
+                # No event loop exists, create and run with asyncio.run()
                 result = asyncio.run(async_func(*args, **kwargs))
             
             if isinstance(result, dict) and "error" in result:
@@ -246,11 +261,7 @@ class AgentDatabaseTools:
         
         Returns list of recent EDI messages with status and timing.
         """
-        try:
-            return await list_recent_edi_messages_orm(limit=limit)
-        except Exception as e:
-            logger.error(f"Failed to get recent EDI activity: {e}")
-            return {"error": f"Database query failed: {str(e)}"}
+        return await list_recent_edi_messages_orm(limit=limit)
     
     def generate_escalation_summary(self, incident_data: Dict[str, Any], database_analysis: Dict[str, Any], crew_analysis: str = "") -> Dict[str, Any]:
         """
