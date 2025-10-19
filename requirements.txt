@@ -142,7 +142,7 @@ pytz==2025.2
     # via
     #   flower
     #   pandas
-pywin32==311
+
     # via portalocker
 pyyaml==6.0.3
     # via uvicorn
@@ -151,6 +151,8 @@ qdrant-client==1.15.1
 redis==5.2.1
     # via kombu
 rich==14.2.0
+loguru
+docx2txt
     # via
     #   rich-toolkit
     #   typer
