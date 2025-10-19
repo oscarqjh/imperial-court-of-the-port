@@ -174,6 +174,79 @@ export function ChatInterface() {
                 </p>
               </div>
 
+              {/* How to Use Section */}
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200/50">
+                <h2 className="text-lg font-semibold text-center mb-6 text-gray-800">
+                  🚀 How to Use - 3 Simple Steps
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Step 1 */}
+                  <div className="text-center space-y-3">
+                    <div className="mx-auto w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-lg">
+                      1
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="font-semibold text-blue-800">
+                        Submit Incident
+                      </h3>
+                      <p className="text-sm text-blue-700">
+                        Upload PDF/TXT files or enter incident details manually
+                      </p>
+                      <div className="text-2xl">📤</div>
+                    </div>
+                  </div>
+
+                  {/* Step 2 */}
+                  <div className="text-center space-y-3">
+                    <div className="mx-auto w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center text-white font-bold text-lg">
+                      2
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="font-semibold text-purple-800">
+                        Track Progress
+                      </h3>
+                      <p className="text-sm text-purple-700">
+                        Monitor AI analysis progress on the dashboard page
+                      </p>
+                      <div className="text-2xl">📊</div>
+                    </div>
+                  </div>
+
+                  {/* Step 3 */}
+                  <div className="text-center space-y-3">
+                    <div className="mx-auto w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-lg">
+                      3
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="font-semibold text-green-800">
+                        View Results
+                      </h3>
+                      <p className="text-sm text-green-700">
+                        Review detailed analysis and escalation summary
+                      </p>
+                      <div className="text-2xl">✅</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Action Links */}
+                <div className="flex justify-center mt-6 space-x-3">
+                  <Link href="/dashboard">
+                    <button className="text-sm px-4 py-2 bg-white border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors text-blue-700 font-medium">
+                      📊 Go to Dashboard
+                    </button>
+                  </Link>
+                  <button
+                    onClick={() => {
+                      document.querySelector("textarea")?.focus();
+                    }}
+                    className="text-sm px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
+                  >
+                    📝 Start Here
+                  </button>
+                </div>
+              </div>
+
               <div className="space-y-6">
                 {/* File Upload Section */}
                 <div>
