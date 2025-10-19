@@ -1,7 +1,8 @@
 import axios from "axios";
 import type { Job, IncidentRequest } from "@/types/job";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000"; // leave empty to use relative URLs or set to backend base if needed
+const API_BASE =
+  "https://imperial-court-of-the-port-image-386400129087.asia-southeast1.run.app/"; // leave empty to use relative URLs or set to backend base if needed
 
 /**
  * Start a new incident run. Expects the backend to return { run_id, status, ... }
@@ -10,11 +11,13 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000"; //
 export async function startRun(request: IncidentRequest): Promise<Job> {
   const url = `${API_BASE}/incident/run`;
 
-  // Ensure the request has the required structure
+  // Ensure the request matches the simplified backend format
   const payload: IncidentRequest = {
     incident_type: request.incident_type,
     severity: request.severity,
-    payload: request.payload,
+    payload: {
+      incident_text: request.payload.incident_text || "",
+    },
   };
 
   const resp = await axios.post(url, payload, {

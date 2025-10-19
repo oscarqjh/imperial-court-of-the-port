@@ -83,27 +83,23 @@ export function ChatInterface() {
         }
       }
 
-      // Submit using the correct API format that matches your backend
-      const response = await fetch("http://localhost:8000/incident/run", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          incident_type: "uploaded_content", // Will be auto-classified by CrewAI
-          severity: "medium", // Will be auto-classified by CrewAI
-          payload: {
-            incident_text: incidentText,
-            uploaded_files: uploadedFiles.map((f) => ({
-              name: f.name,
-              type: f.type,
-              size: f.size,
-            })),
-            timestamp: new Date().toISOString(),
-            source: "web_interface",
+      // Submit using the simplified API format that matches your backend expectation
+      const response = await fetch(
+        "https://imperial-court-of-the-port-image-386400129087.asia-southeast1.run.app/incident/run",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-        }),
-      });
+          body: JSON.stringify({
+            incident_type: "general", // Will be auto-classified by CrewAI
+            severity: "medium", // Will be auto-classified by CrewAI
+            payload: {
+              incident_text: incidentText,
+            },
+          }),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -326,7 +322,7 @@ export function ChatInterface() {
                   {isSubmitting ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
-                      <span>Analyzing Incident...</span>
+                      <span>Submitting task...</span>
                     </>
                   ) : (
                     <>
