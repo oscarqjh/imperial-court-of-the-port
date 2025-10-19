@@ -40,13 +40,14 @@ export function JobRow({ job, onRefresh }: Props) {
     }
   };
 
-  // Extract crew output from job result (instead of escalation_summary)
+  // Extract crew output from job result, fallback to escalation_summary
   const getCrewOutput = () => {
     if (!job.result || typeof job.result !== "object") {
       return null;
     }
 
-    return job.result.crew_output || null;
+    // Try crew_output first, then fallback to escalation_summary
+    return job.result.crew_output || job.result.escalation_summary || null;
   };
 
   // Check if there's incident information
