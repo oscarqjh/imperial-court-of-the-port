@@ -38,6 +38,7 @@ click-repl==0.3.0
 colorama==0.4.6
     # via
     #   click
+    #   loguru
     #   uvicorn
 dnspython==2.8.0
     # via email-validator
@@ -89,6 +90,8 @@ jinja2==3.1.6
     # via fastapi
 kombu==5.5.4
     # via celery
+loguru==0.7.3
+    # via -r requirements.in
 markdown-it-py==4.0.0
     # via rich
 markupsafe==3.0.3
@@ -218,4 +221,5 @@ wcwidth==0.2.14
     # via prompt-toolkit
 websockets==15.0.1
     # via uvicorn
-psycopg 
+win32-setctime==1.2.0
+    # via loguru
