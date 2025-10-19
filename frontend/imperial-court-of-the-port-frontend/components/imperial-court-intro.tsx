@@ -100,9 +100,8 @@ export default function ImperialCourtIntro(): JSX.Element {
           </h2>
           <p className="text-center text-gray-600 mb-10 max-w-3xl mx-auto">
             Our codebase can be containerised to enable seamless deployment across multiple environments. 
-            Choose the infrastructure that best fits your organization's needs. We are recommending a hybrid solution.
+            Choose the infrastructure that best fits your organization's needs. We are recommending a hybrid solution for high availability.
           </p>
-          <img src="/largearchitecture.png" alt="Deployment Architecture overview" className="w-full h-auto mb-10 rounded-lg shadow-md"/>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
             <DeploymentCard 
               title="On-Premises"
@@ -133,9 +132,9 @@ export default function ImperialCourtIntro(): JSX.Element {
               <span className="bg-white px-4 py-2 rounded-lg text-sm font-medium text-gray-700 shadow-sm border border-gray-200">Private Data Centers</span>
             </div>
             <h4 className="font-semibold text-gray-900 mb-3 text-center text-lg p-4">Example Architecture on Azure</h4>
-            <img src="/azurearchitecture.png" alt="Azure Architecture overview" className="w-full h-auto mb-10 rounded-lg shadow-md"/>
+            <img src="/psacodesprint.drawio.png" alt="Azure Architecture overview" className="w-full h-auto mb-10 rounded-lg shadow-md"/>
             <p className='text-slate-800'>
-                Imperial Court operates on a robust, Azure-native architecture designed for enterprise-grade reliability, security, and scalability through intelligent orchestration of various Azure services. The process begins with Incident Submission & Security, where reports enter via a containerized Eureka Client App hosted on Azure Functions, secured by Azure DDoS Protection and Azure WAF for initial screening. Next, in Intelligent Job Orchestration, Azure Functions create database job entries that trigger Azure Machine Learning to host the Imperial Court Agentic Framework. AI agents analyze the incidents using CrewAI, utilizing RAG capabilities by accessing operational data stored in Cosmos DB and PostgreSQL. This leads to Multi-Agent Analysis, where specialized AI agents execute comprehensive analysis—covering evidence, technical investigation, business impact, and communication strategy—with results stored in Blob Storage and job status synced to Cosmos DB. Subsequently, Automated Escalation & Notification is handled as Azure Functions trigger timely notifications via Event Grid, and Azure Communication Services push information to stakeholders via email or other formats. Finally, External Integration & Monitoring is achieved through Webhooks for application integration, while Azure Logs, Azure Sentinel, and Microsoft Defender provide comprehensive monitoring and logging for full traceability and accountability.
+                Imperial Court operates on a robust architecture designed for enterprise-grade reliability, security, and scalability through intelligent orchestration of various Azure services. The process begins with Incident Submission & Security, where reports enter via a containerized Eureka Client App hosted on Azure Functions, secured by Azure DDoS Protection and Azure WAF for initial screening. Next, in Intelligent Job Orchestration, Azure Functions create database job entries that trigger Azure Machine Learning to host the Imperial Court Agentic Framework. AI agents analyze the incidents using CrewAI, utilizing RAG capabilities by accessing operational data stored in Cosmos DB and PostgreSQL. This leads to Multi-Agent Analysis, where specialized AI agents execute comprehensive analysis—covering evidence, technical investigation, business impact, and communication strategy—with results stored in Blob Storage and job status synced to Cosmos DB. Subsequently, Automated Escalation & Notification is handled as Azure Functions trigger timely notifications via Event Grid, and Azure Communication Services push information to stakeholders via email or other formats. Finally, External Integration & Monitoring is achieved through Webhooks for application integration, while Azure Logs, Azure Sentinel, and Microsoft Defender provide comprehensive monitoring and logging for full traceability and accountability.
             </p>
 
           </div>
@@ -231,6 +230,11 @@ export default function ImperialCourtIntro(): JSX.Element {
               ]}
             />
           </div>
+        </section>
+        <section className='bg-white rounded-2xl shadow-sm p-8 md:p-16 mb-8'>
+          <h2 className="text-2xl md:text-2xl font-bold text-gray-900 text-center mb-8">
+            Our Solution Design Philosophy: Build with performance, scalability and user needs in mind, Think long-term and consider the infrastructure as well as the AI solution. An AI solution on a shaky infrastructure crumbles on heavy loads and while cloud can help to improve scalability, we must avert the risk of a single-point of failure by using a hybrid solution.
+          </h2>
         </section>
       </div>
     </div>
