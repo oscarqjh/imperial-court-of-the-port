@@ -6,6 +6,7 @@ This module provides structured tools that agents can use to make informed decis
 from __future__ import annotations
 
 import asyncio
+import concurrent.futures
 from typing import Dict, Any, List, Optional, Callable
 from functools import wraps
 from loguru import logger
@@ -29,29 +30,33 @@ def sync_wrapper(async_func: Callable) -> Callable:
     def wrapper(*args, **kwargs):
         func_name = async_func.__name__
         logger.info(f"🛠️ Agent tool invoked: {func_name}({', '.join(str(arg) for arg in args[:2])}{', ...' if len(args) > 2 else ''})")
+        
         try:
             # Check if there's a running event loop
             try:
-                loop = asyncio.get_running_loop()
-                # If we're in an async context with a running loop, we can't use run_until_complete
-                # This shouldn't happen in CrewAI, but handle it gracefully
-                logger.warning(f"   ⚠️ Running loop detected for {func_name}, cannot execute async function synchronously")
-                return {"error": "Cannot execute async function in running event loop context"}
+                current_loop = asyncio.get_running_loop()
+                # We're in an async context with a running loop
+                logger.warning(f"   ⚠️ Running loop detected for {func_name}, using asyncio.create_task")
+                
+                # Create a task to run in the existing loop
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(asyncio.run, async_func(*args, **kwargs))
+                    result = future.result(timeout=30)  # 30 second timeout
+                    
             except RuntimeError:
                 # No running loop, this is expected for sync contexts
-                pass
-            
-            # Try to get existing event loop or create new one
-            try:
-                loop = asyncio.get_event_loop()
-                if loop.is_closed():
-                    # Loop is closed, create a new one
-                    asyncio.set_event_loop(asyncio.new_event_loop())
+                try:
+                    # Try to get existing event loop
                     loop = asyncio.get_event_loop()
-                result = loop.run_until_complete(async_func(*args, **kwargs))
-            except RuntimeError:
-                # No event loop exists, create and run with asyncio.run()
-                result = asyncio.run(async_func(*args, **kwargs))
+                    if loop.is_closed():
+                        # Loop is closed, create a new one
+                        asyncio.set_event_loop(asyncio.new_event_loop())
+                        loop = asyncio.get_event_loop()
+                    result = loop.run_until_complete(async_func(*args, **kwargs))
+                except RuntimeError:
+                    # No event loop exists, create and run with asyncio.run()
+                    result = asyncio.run(async_func(*args, **kwargs))
             
             if isinstance(result, dict) and "error" in result:
                 logger.warning(f"   ❌ Tool {func_name} returned error: {result['error']}")
@@ -59,8 +64,11 @@ def sync_wrapper(async_func: Callable) -> Callable:
                 logger.info(f"   ✅ Tool {func_name} completed successfully")
             
             return result
+            
         except Exception as e:
             logger.error(f"   ❌ Tool {func_name} failed with exception: {str(e)}")
+            import traceback
+            logger.error(f"   📊 Full traceback: {traceback.format_exc()}")
             return {"error": f"Database query failed: {str(e)}"}
     return wrapper
 

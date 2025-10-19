@@ -1,7 +1,6 @@
 "use client";
 import { Sparkles, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "./theme-toggle";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -24,7 +23,6 @@ export function ChatHeader() {
           </div>
 
           <div className="flex items-center gap-1 sm:gap-2">
-            <ThemeToggle />
             {/* Desktop Navigation */}
             <Link href="/dashboard">
               <Button
