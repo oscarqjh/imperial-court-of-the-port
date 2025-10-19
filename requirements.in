@@ -8,3 +8,4 @@ psycopg2-binary
 qdrant_client
 openpyxl
 pydantic_settings
+loguru
