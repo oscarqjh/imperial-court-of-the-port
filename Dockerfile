@@ -27,7 +27,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy application code
 COPY app/ ./app/
 COPY start_celery_worker.py .
-COPY .env .
+COPY ./app/.env .
 
 # Create non-root user for security
 RUN adduser --disabled-password --gecos '' appuser && \
@@ -38,4 +38,4 @@ USER appuser
 EXPOSE 8000
 
 # Default command (can be overridden)
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "${PORT:-8080}"]
