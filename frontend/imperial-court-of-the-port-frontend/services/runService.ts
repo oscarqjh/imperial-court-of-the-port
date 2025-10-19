@@ -1,7 +1,7 @@
 import axios from "axios";
 import type { Job, IncidentRequest } from "@/types/job";
 
-const API_BASE = "http://localhost:8000"; // leave empty to use relative URLs or set to backend base if needed
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000"; // leave empty to use relative URLs or set to backend base if needed
 
 /**
  * Start a new incident run. Expects the backend to return { run_id, status, ... }
