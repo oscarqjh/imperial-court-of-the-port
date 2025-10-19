@@ -185,3 +185,4 @@ wcwidth==0.2.14
     # via prompt-toolkit
 websockets==15.0.1
     # via uvicorn
+psycopg 
