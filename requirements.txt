@@ -521,6 +521,9 @@ requests==2.32.5
 requests-oauthlib==2.0.0
     # via kubernetes
 rich==14.2.0
+loguru
+docx2txt
+psycopg
     # via
     #   chromadb
     #   instructor
