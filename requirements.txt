@@ -156,6 +156,7 @@ redis==5.2.1
 rich==14.2.0
 loguru
 docx2txt
+psycopg
     # via
     #   rich-toolkit
     #   typer
