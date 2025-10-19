@@ -10,8 +10,6 @@ anyio==4.11.0
     #   starlette
     #   watchfiles
 billiard==4.2.2
-qdrant_client
-openpyxl
     # via celery
 celery==5.5.3
     # via
@@ -47,6 +45,8 @@ email-validator==2.3.0
     # via
     #   fastapi
     #   pydantic
+et-xmlfile==2.0.0
+    # via openpyxl
 fastapi==0.119.0
     # via -r requirements.in
 fastapi-cli==0.0.13
@@ -57,10 +57,16 @@ flower==2.0.1
     # via -r requirements.in
 greenlet==3.2.4
     # via sqlalchemy
+grpcio==1.75.1
+    # via qdrant-client
 h11==0.16.0
     # via
     #   httpcore
     #   uvicorn
+h2==4.3.0
+    # via httpx
+hpack==4.1.0
+    # via h2
 httpcore==1.0.9
     # via httpx
 httptools==0.7.1
@@ -69,8 +75,11 @@ httpx==0.28.1
     # via
     #   fastapi
     #   fastapi-cloud-cli
+    #   qdrant-client
 humanize==4.14.0
     # via flower
+hyperframe==6.1.0
+    # via h2
 idna==3.11
     # via
     #   anyio
@@ -87,22 +96,36 @@ markupsafe==3.0.3
 mdurl==0.1.2
     # via markdown-it-py
 numpy==2.3.4
-    # via pandas
+    # via
+    #   pandas
+    #   qdrant-client
+openpyxl==3.1.5
+    # via -r requirements.in
 packaging==25.0
     # via kombu
 pandas==2.3.3
     # via -r requirements.in
+portalocker==3.2.0
+    # via qdrant-client
 prometheus-client==0.23.1
     # via flower
 prompt-toolkit==3.0.52
     # via click-repl
+protobuf==6.33.0
+    # via qdrant-client
+psycopg2-binary==2.9.11
+    # via -r requirements.in
 pydantic==2.12.2
     # via
     #   -r requirements.in
     #   fastapi
     #   fastapi-cloud-cli
+    #   pydantic-settings
+    #   qdrant-client
 pydantic-core==2.41.4
     # via pydantic
+pydantic-settings==2.11.0
+    # via -r requirements.in
 pygments==2.19.2
     # via rich
 python-dateutil==2.9.0.post0
@@ -110,15 +133,21 @@ python-dateutil==2.9.0.post0
     #   celery
     #   pandas
 python-dotenv==1.1.1
-    # via uvicorn
+    # via
+    #   pydantic-settings
+    #   uvicorn
 python-multipart==0.0.20
     # via fastapi
 pytz==2025.2
     # via
     #   flower
     #   pandas
+pywin32==311
+    # via portalocker
 pyyaml==6.0.3
     # via uvicorn
+qdrant-client==1.15.1
+    # via -r requirements.in
 redis==5.2.1
     # via kombu
 rich==14.2.0
@@ -152,6 +181,7 @@ typer==0.19.2
 typing-extensions==4.15.0
     # via
     #   fastapi
+    #   grpcio
     #   pydantic
     #   pydantic-core
     #   rich-toolkit
@@ -159,17 +189,18 @@ typing-extensions==4.15.0
     #   typer
     #   typing-inspection
 typing-inspection==0.4.2
-    # via pydantic
+    # via
+    #   pydantic
+    #   pydantic-settings
 tzdata==2025.2
     # via
     #   kombu
     #   pandas
 urllib3==2.5.0
-    # via sentry-sdk
+    # via
+    #   qdrant-client
+    #   sentry-sdk
 uvicorn==0.37.0
-loguru==0.7.3
-docx2txt
-pydantic_settings
     # via
     #   fastapi
     #   fastapi-cli
